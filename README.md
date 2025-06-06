@@ -1,2 +1,2 @@
 # billingplatform-py
-The official Python library for working with BillingPlatform APIs.
+A community driven Python library for working with BillingPlatform APIs.
