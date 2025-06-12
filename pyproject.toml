@@ -36,8 +36,13 @@ Issues = 'https://github.com/forgineer/billingplatform-py/issues'
 
 
 [project.optional-dependencies]
-# pip install -e .[pypi_deploy]
-pypi_deploy = [
+# pip install -e .[testing]
+testing = [
+    'flask',
+    'pandas'
+]
+# pip install -e .[deploy]
+deploy = [
     'build',
     'twine'
 ]

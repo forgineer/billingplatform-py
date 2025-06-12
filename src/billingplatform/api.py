@@ -1,5 +1,7 @@
 import atexit
+import logging
 import requests
+
 
 AUTH_API_VERSION = '1.0'
 REST_API_VERSION = '2.0'
@@ -12,7 +14,8 @@ class BillingPlatform:
                  username: str = None, 
                  password: str = None, 
                  client_id: str = None, 
-                 client_secret: str = None
+                 client_secret: str = None,
+                 token_type: str = 'access_token' # access_token or refresh_token
                 ):
         """
         Initialize the BillingPlatform API client.
@@ -26,10 +29,11 @@ class BillingPlatform:
 
         if all([username, password]):
             self.login()
-        elif all([client_id, client_secret]):
+        elif all([client_id, client_secret, token_type]):
             self.oauth_login()
         else:
             raise ValueError("Either username/password or client_id/client_secret must be provided.")
+
 
     def login(self) -> None:
         """
@@ -52,7 +56,7 @@ class BillingPlatform:
             if _login_response.status_code != 200:
                 raise Exception(f'Login failed with status code: {_login_response.status_code}, response: {_login_response.text}')
             else:
-                print(f'Login successful: {_login_response.text}')
+                logging.debug(f'Login successful: {_login_response.text}')
             
             # Retrieve 'loginResponse' data
             _login_response_data = _login_response.json().get('loginResponse')
@@ -70,14 +74,13 @@ class BillingPlatform:
         except requests.RequestException as e:
             raise Exception(f'Failed to login: {e}')
     
+
     def oauth_login(self):
         """
         Authenticate with the BillingPlatform API using OAuth and return an access token.
         """
-        try:
-            return self.session
-        except requests.RequestException as e:
-            raise Exception(f"Failed to login: {e}")
+        ...
+
 
     def logout(self):
         """
@@ -91,12 +94,13 @@ class BillingPlatform:
                 if _logout_response.status_code != 200:
                     raise Exception(f'Logout failed with status code: {_logout_response.status_code}, response: {_logout_response.text}')
                 else:
-                    print(f'Logout successful: {_logout_response.text}')
+                    logging.debug(f'Logout successful: {_logout_response.text}')
             
             # Clear session
             self.session.close()
         except requests.RequestException as e:
             raise Exception(f"Failed to logout: {e}")
+
 
     def query(self, sql: str):
         """

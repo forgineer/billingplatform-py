@@ -9,7 +9,7 @@ def login():
     This endpoint simulates a successful login response.
     It returns a session ID and an error code of 0, indicating success.
     """
-    success_response = {
+    login_response = {
         "loginResponse": [
             {
                 "SessionID": "thisIsASessionID",
@@ -19,7 +19,8 @@ def login():
         ]
     }
 
-    return success_response
+    return login_response
+
 
 @app.route("/rest/2.0/logout", methods=["POST"])
 def logout():
@@ -28,7 +29,16 @@ def logout():
     This endpoint simulates a successful logout response.
     It returns a session ID and an error code of 0, indicating success.
     """
-    return {'LoggedOut': 'true'}
+    logout_response = {
+        "logoutResponse": [
+            {
+                "ErrorCode": "0",
+                "ErrorText": []
+            }
+        ]
+    }
+
+    return logout_response
 
 
 if __name__ == "__main__":
