@@ -1,6 +1,14 @@
-from flask import Flask
+import pandas as pd
+
+from flask import Flask, request
+
 
 app = Flask(__name__)
+
+# Simulate a database with a CSV file
+data_df: pd.DataFrame = pd.read_csv('server/data.csv')
+data: dict = data_df.to_dict(orient='records')
+
 
 @app.route("/rest/2.0/login", methods=["POST"])
 def login():
@@ -39,6 +47,23 @@ def logout():
     }
 
     return logout_response
+
+
+@app.route("/rest/2.0/query")
+def query():
+    """
+    Mock query endpoint for BillingPlatform API.
+    This endpoint simulates a successful query response.
+    It returns the results of a query as a dictionary or JSON of records.
+    """
+    sql_query: str = request.args.get('sql')
+    print(sql_query)
+    
+    query_response = {
+        "queryResponse": data
+    }
+
+    return query_response
 
 
 if __name__ == "__main__":

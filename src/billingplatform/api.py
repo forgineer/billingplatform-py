@@ -2,6 +2,8 @@ import atexit
 import logging
 import requests
 
+from urllib.parse import quote
+
 
 AUTH_API_VERSION = '1.0'
 REST_API_VERSION = '2.0'
@@ -106,30 +108,26 @@ class BillingPlatform:
         """
         Execute a SQL query against the BillingPlatform API and return the results.
         """
-        data = {
-            "queryResponse": [
-                {
-                    "Id": 1,
-                    "Name": "Account 1",
-                    "Description": "The first account",
-                    "Status": "ACTIVE"
-                },
-                {
-                    "Id": 2,
-                    "Name": "Account 2",
-                    "Description": "The second account",
-                    "Status": "ACTIVE"
-                },
-                {
-                    "Id": 3,
-                    "Name": "Account 3",
-                    "Description": "The third account",
-                    "Status": "INACTIVE"
-                }
-            ]
-        }
+        _url_encoded_sql = quote(sql)
+        _query_url = f'{self.base_url}/rest/{REST_API_VERSION}/query?sql={_url_encoded_sql}'
 
-        return data
+        try:
+            _query_response = self.session.get(_query_url)
+
+            if _query_response.status_code != 200:
+                raise Exception(f'Query failed with status code: {_query_response.status_code}, response: {_query_response.text}')
+            else:
+                logging.debug(f'Query successful: {_query_response.text}')
+            
+            # Retrieve 'queryResponse' data
+            _query_response_data = _query_response.json().get('queryResponse')
+
+            if not _query_response_data:
+                raise Exception('Query response did not contain queryResponse data.')
+
+            return _query_response_data
+        except requests.RequestException as e:
+            raise Exception(f'Failed to execute query: {e}')
 
 
     def retrieve(self, 
@@ -140,7 +138,7 @@ class BillingPlatform:
 
 
     # Post
-    def create(self):
+    def create(self, ):
         ...
 
 
@@ -162,7 +160,7 @@ class BillingPlatform:
     def undelete(self, ):
         ...
 
-    
+
     def file_upload(self, file_path: str):
         ...
 
