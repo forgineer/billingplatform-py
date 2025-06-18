@@ -39,7 +39,10 @@ class BillingPlatform:
 
     def login(self) -> None:
         """
-        Authenticate with the BillingPlatform API and return a session object with sesstion ID.
+        Authenticate with the BillingPlatform API using username and password.
+
+        :return: None
+        :raises Exception: If login fails or response does not contain expected data.
         """
         if LOGOUT_AT_EXIT:
             atexit.register(self.logout)
@@ -77,16 +80,19 @@ class BillingPlatform:
             raise Exception(f'Failed to login: {e}')
     
 
-    def oauth_login(self):
+    def oauth_login(self) -> None:
         """
         Authenticate with the BillingPlatform API using OAuth and return an access token.
         """
         ...
 
 
-    def logout(self):
+    def logout(self) -> None:
         """
         Log out of the BillingPlatform API.
+
+        :return: None
+        :raises Exception: If logout fails or response does not contain expected data.
         """
         try:
             if self.session.headers.get('sessionid'):
@@ -104,9 +110,13 @@ class BillingPlatform:
             raise Exception(f"Failed to logout: {e}")
 
 
-    def query(self, sql: str):
+    def query(self, sql: str) -> dict:
         """
-        Execute a SQL query against the BillingPlatform API and return the results.
+        Execute a SQL query against the BillingPlatform API.
+
+        :param sql: The SQL query to execute.
+        :return: The query response data.
+        :raises Exception: If query fails or response does not contain expected data.
         """
         _url_encoded_sql = quote(sql)
         _query_url = f'{self.base_url}/rest/{REST_API_VERSION}/query?sql={_url_encoded_sql}'
@@ -120,7 +130,7 @@ class BillingPlatform:
                 logging.debug(f'Query successful: {_query_response.text}')
             
             # Retrieve 'queryResponse' data
-            _query_response_data = _query_response.json().get('queryResponse')
+            _query_response_data = _query_response.json()
 
             if not _query_response_data:
                 raise Exception('Query response did not contain queryResponse data.')
@@ -133,8 +143,41 @@ class BillingPlatform:
     def retrieve(self, 
                  entity: str, 
                  record_id: int = None, 
-                 queryAnsiSql: str = None):
-        ...
+                 queryAnsiSql: str = None) -> dict:
+        """
+        Retrieve records from the BillingPlatform API.
+        
+        :param entity: The entity to retrieve records from.
+        :param record_id: The ID of the record to retrieve.
+        :param queryAnsiSql: Optional ANSI SQL query to filter records.
+        :return: The retrieve response data.
+        :raises Exception: If retrieve fails or response does not contain expected data.
+        """
+        if record_id:
+            _retrieve_url = f'{self.base_url}/rest/{REST_API_VERSION}/{entity}/{record_id}'
+        elif queryAnsiSql:
+            _url_encoded_sql = quote(queryAnsiSql)
+            _retrieve_url = f'{self.base_url}/rest/{REST_API_VERSION}/{entity}?queryAnsiSql={_url_encoded_sql}'
+        else:
+            _retrieve_url = f'{self.base_url}/rest/{REST_API_VERSION}/{entity}'
+
+        try:
+            _retrieve_response = self.session.get(_retrieve_url)
+
+            if _retrieve_response.status_code != 200:
+                raise Exception(f'Retrieve failed with status code: {_retrieve_response.status_code}, response: {_retrieve_response.text}')
+            else:
+                logging.debug(f'Retrieve successful: {_retrieve_response.text}')
+            
+            # Retrieve 'retrieveResponse' data
+            _retrieve_response_data = _retrieve_response.json()
+
+            if not _retrieve_response_data:
+                raise Exception('Retrieve response did not contain retrieveResponse data.')
+
+            return _retrieve_response_data
+        except requests.RequestException as e:
+            raise Exception(f'Failed to retrieve records: {e}')
 
 
     # Post
