@@ -1,10 +1,11 @@
 import pandas as pd
 
-from billingplatform.utils import QueryParser
 from flask import Flask, request
 from logging.config import dictConfig
+from utils import QueryParser
 
 
+# Configure logging for the Flask application
 dictConfig({
     'version': 1,
     'formatters': {'default': {
@@ -22,6 +23,7 @@ dictConfig({
 })
 
 
+# Standup Flask application
 app = Flask(__name__)
 
 # Simulate a database with a CSV file
@@ -90,8 +92,24 @@ def query():
     return query_response
 
 
+@app.route("/rest/2.0/<string:entity>/<int:record_id>")
+def retrieve_by_id(entity: str, record_id: int):
+    """
+    Mock query endpoint for BillingPlatform API.
+
+    :param entity: The entity to retrieve records from.
+    :param record_id: The ID of the record to retrieve.
+    :return: A mock retrieve response containing the results of a query as a dictionary or JSON of records.
+    """
+    retrieve_response = {
+        "retrieveResponse": data[record_id] if record_id < len(data) else {}
+    }
+
+    return retrieve_response
+
+
 @app.route("/rest/2.0/<string:entity>")
-def retrieve(entity: str):
+def retrieve_by_query(entity: str):
     """
     Mock query endpoint for BillingPlatform API.
 
@@ -111,21 +129,6 @@ def retrieve(entity: str):
     return retrieve_response
 
 
-@app.route("/rest/2.0/<string:entity>/<int:record_id>")
-def retrieve_by_id(entity: str, record_id: int):
-    """
-    Mock query endpoint for BillingPlatform API.
-
-    :param entity: The entity to retrieve records from.
-    :param record_id: The ID of the record to retrieve.
-    :return: A mock retrieve response containing the results of a query as a dictionary or JSON of records.
-    """
-    retrieve_response = {
-        "retrieveResponse": data[record_id] if record_id < len(data) else {}
-    }
-
-    return retrieve_response
-
-
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=80)
+    

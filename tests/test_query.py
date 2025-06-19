@@ -1,28 +1,34 @@
 import logging
-import pandas as pd
+import requests
 import unittest
 
 from billingplatform import BillingPlatform
+
+
+def get_credentials(path='credentials.json') -> dict:
+    """
+    Load credentials from a JSON file.
+    """
+    import json
+    
+    with open(path) as f:
+        return json.load(f)
 
 
 class TestBillingPlatformQuery(unittest.TestCase):
     def test_basic_query(self):
         logging.basicConfig(level=logging.DEBUG)
 
-        # Fake credentials for testing against the mock server
-        session_credentials = {
-            'base_url': 'http://localhost',
-            'username': 'blake',
-            'password': 'passwd'
-        }
-
+        session_credentials = get_credentials()
         bp = BillingPlatform(**session_credentials)
 
-        data: list[dict] = bp.query("SELECT * FROM ACCOUNTS WHERE 1=1")
-        print(data)
+        self.assertIsInstance(bp, BillingPlatform)
+        self.assertIsInstance(bp.session, requests.Session)
 
-        #data_df: pd.DataFrame = pd.DataFrame(data)
-        #print(data_df)
+        data: dict = bp.query("SELECT Id, Name, Status FROM ACCOUNT WHERE 1=1")
+        #print(data)
+
+        self.assertIsInstance(data, dict)
 
 
 if __name__ == '__main__':
