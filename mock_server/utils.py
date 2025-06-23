@@ -2,6 +2,7 @@ import re
 
 
 class QueryParser:
+    """A simple SQL query parser that extracts components from a SQL SELECT statement."""
     def __init__(self, query_string):
         self.query_string = self._normalize_query(query_string)
         self.parsed_data = {}

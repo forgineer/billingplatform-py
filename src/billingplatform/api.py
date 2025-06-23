@@ -2,24 +2,27 @@ import atexit
 import logging
 import requests
 
-from urllib.parse import quote
+from urllib.parse import quote # for URL encoding
 
 
-# BillingPlatform API version constants
-# These constants define the API versions for authentication and REST endpoints.
-# Although these are not exepected to change frequently, they can be updated as needed.
-AUTH_API_VERSION: str = '1.0' # /auth endpoint
-REST_API_VERSION: str = '2.0' # /rest endpoint
-
-# For configuring the BillingPlatform API client to automatically log out at exit if set to True (default).
-# This is useful for ensuring that sessions are properly closed when the application exits.
-# Set to False to disable automatic logout and manage session lifecycle manually with the logout method.
-LOGOUT_AT_EXIT: bool = True
-
-# SSL Verification
-# Set to True to verify SSL certificates, False to disable verification, or a path to a CA_BUNDLE file.
-# If set to False, it is recommended to use this only in development environments.
-VERIFY_CERTIFICATE: bool | str = True
+class BillingPlatformException(Exception):
+    """Base exception for BillingPlatform."""
+    def __init__(self, response_code: int, response_text: str = ''):
+        self.response_code = response_code
+        self.response_text = response_text
+        
+        if self.response_code == 400:
+            super().__init__(f'Error response, bad request. {self.response_text}')
+        elif self.response_code == 401:
+            super().__init__(f'Error response, unauthorized. {self.response_text}')
+        elif self.response_code == 404: 
+            super().__init__(f'Error response, not found. {self.response_text}')
+        elif self.response_code == 429:
+            super().__init__(f'Error response, too many requests. {self.response_text}')
+        elif self.response_code == 500:
+            super().__init__(f'Error response, internal server error. {self.response_text}')
+        else:
+            super().__init__(f'Error response, code: {self.response_code}, text: {self.response_text or "<No response text provided>"}')
 
 
 class BillingPlatform:
@@ -29,17 +32,40 @@ class BillingPlatform:
                  password: str = None, 
                  client_id: str = None, 
                  client_secret: str = None,
-                 token_type: str = 'access_token' # access_token or refresh_token
+                 token_type: str = 'access_token', # access_token or refresh_token
+                 requests_parameters: dict = None,
+                 auth_api_version: str = '1.0', # /auth endpoint
+                 rest_api_version: str = '2.0', # /rest endpoint
+                 logout_at_exit: bool = True
                 ):
         """
         Initialize the BillingPlatform API client.
+
+        :param base_url: The base URL of the BillingPlatform API.
+        :param username: Username for authentication (optional if using OAuth).
+        :param password: Password for authentication (optional if using OAuth).
+        :param client_id: Client ID for OAuth authentication (optional if using username/password).
+        :param client_secret: Client secret for OAuth authentication (optional if using username/password).
+        :param token_type: Type of token to use for OAuth ('access_token' or 'refresh_token').
+        :param requests_parameters: Additional parameters to pass to each request made by the client (optional).
+        :param auth_api_version: Version of the authentication API (default is '1.0').
+        :param rest_api_version: Version of the REST API (default is '2.0').
+        :param logout_at_exit: Whether to log out automatically at exit (default is True).
+        
+        :raises ValueError: If neither username/password nor client_id/client_secret is provided.
+        :raises BillingPlatformException: If login fails or response does not contain expected data.
         """
         self.base_url: str = base_url.rstrip('/')
         self.username: str = username
         self.password: str = password
         self.client_id: str = client_id
         self.client_secret: str = client_secret
+        self.requests_parameters: dict = requests_parameters or {}
+        self.auth_api_version: str = auth_api_version
+        self.rest_api_version: str = rest_api_version
+        self.logout_at_exit: bool = logout_at_exit
         self.session: requests.Session = requests.Session()
+
 
         if all([username, password]):
             self.login()
@@ -56,10 +82,12 @@ class BillingPlatform:
         :return: None
         :raises Exception: If login fails or response does not contain expected data.
         """
-        if LOGOUT_AT_EXIT:
+        if self.logout_at_exit:
             atexit.register(self.logout)
+        else:
+            logging.warning('Automatic logout at exit has been disabled. You must call logout() manually to close the session.')
         
-        _login_url: str = f'{self.base_url}/rest/{REST_API_VERSION}/login'
+        _login_url: str = f'{self.base_url}/rest/{self.rest_api_version}/login'
         
         # Update session headers
         _login_payload: dict = {
@@ -68,10 +96,11 @@ class BillingPlatform:
         }
 
         try:
-            _login_response: requests.Response = self.session.post(_login_url, json=_login_payload, verify=VERIFY_CERTIFICATE)
+            _login_response: requests.Response = self.session.post(_login_url, json=_login_payload, **self.requests_parameters)
 
             if _login_response.status_code != 200:
-                raise Exception(f'Login failed with status code: {_login_response.status_code}, response: {_login_response.text}')
+                raise BillingPlatformException(response_code=_login_response.status_code,
+                                               response_text=_login_response.text)
             else:
                 logging.debug(f'Login successful: {_login_response.text}')
             
@@ -108,11 +137,12 @@ class BillingPlatform:
         """
         try:
             if self.session.headers.get('sessionid'):
-                _logout_url: str = f'{self.base_url}/rest/{REST_API_VERSION}/logout'
-                _logout_response: requests.Response = self.session.post(_logout_url, verify=VERIFY_CERTIFICATE)
+                _logout_url: str = f'{self.base_url}/rest/{self.rest_api_version}/logout'
+                _logout_response: requests.Response = self.session.post(_logout_url, **self.requests_parameters)
 
                 if _logout_response.status_code != 200:
-                    raise Exception(f'Logout failed with status code: {_logout_response.status_code}, response: {_logout_response.text}')
+                    raise BillingPlatformException(response_code=_logout_response.status_code,
+                                                   response_text=_logout_response.text)
                 else:
                     logging.debug(f'Logout successful: {_logout_response.text}')
             
@@ -131,15 +161,16 @@ class BillingPlatform:
         :raises Exception: If query fails or response does not contain expected data.
         """
         _url_encoded_sql: str = quote(sql)
-        _query_url: str = f'{self.base_url}/rest/{REST_API_VERSION}/query?sql={_url_encoded_sql}'
+        _query_url: str = f'{self.base_url}/rest/{self.rest_api_version}/query?sql={_url_encoded_sql}'
 
         logging.debug(f'Query URL: {_query_url}')
 
         try:
-            _query_response: requests.Response = self.session.get(_query_url, verify=VERIFY_CERTIFICATE)
+            _query_response: requests.Response = self.session.get(_query_url, **self.requests_parameters)
 
             if _query_response.status_code != 200:
-                raise Exception(f'Query failed with status code: {_query_response.status_code}, response: {_query_response.text}')
+                raise BillingPlatformException(response_code=_query_response.status_code,
+                                               response_text=_query_response.text)
             else:
                 logging.debug(f'Query successful: {_query_response.text}')
             
@@ -165,15 +196,16 @@ class BillingPlatform:
         :return: The retrieve response data.
         :raises Exception: If retrieve fails or response does not contain expected data.
         """
-        _retrieve_url: str = f'{self.base_url}/rest/{REST_API_VERSION}/{entity}/{record_id}'
+        _retrieve_url: str = f'{self.base_url}/rest/{self.rest_api_version}/{entity}/{record_id}'
         
         logging.debug(f'Retrieve URL: {_retrieve_url}')
 
         try:
-            _retrieve_response: requests.Response = self.session.get(_retrieve_url, verify=VERIFY_CERTIFICATE)
+            _retrieve_response: requests.Response = self.session.get(_retrieve_url, **self.requests_parameters)
 
             if _retrieve_response.status_code != 200:
-                raise Exception(f'Retrieve failed with status code: {_retrieve_response.status_code}, response: {_retrieve_response.text}')
+                raise BillingPlatformException(response_code=_retrieve_response.status_code,
+                                               response_text=_retrieve_response.text)
             else:
                 logging.debug(f'Retrieve successful: {_retrieve_response.text}')
             
@@ -200,15 +232,16 @@ class BillingPlatform:
         :raises Exception: If retrieve fails or response does not contain expected data.
         """
         _url_encoded_sql: str = quote(queryAnsiSql)
-        _retrieve_url: str = f'{self.base_url}/rest/{REST_API_VERSION}/{entity}?queryAnsiSql={_url_encoded_sql}'
+        _retrieve_url: str = f'{self.base_url}/rest/{self.rest_api_version}/{entity}?queryAnsiSql={_url_encoded_sql}'
         
         logging.debug(f'Retrieve URL: {_retrieve_url}')
 
         try:
-            _retrieve_response: requests.Response = self.session.get(_retrieve_url, verify=VERIFY_CERTIFICATE)
+            _retrieve_response: requests.Response = self.session.get(_retrieve_url, **self.requests_parameters)
 
             if _retrieve_response.status_code != 200:
-                raise Exception(f'Retrieve failed with status code: {_retrieve_response.status_code}, response: {_retrieve_response.text}')
+                raise BillingPlatformException(response_code=_retrieve_response.status_code,
+                                               response_text=_retrieve_response.text)
             else:
                 logging.debug(f'Retrieve successful: {_retrieve_response.text}')
             

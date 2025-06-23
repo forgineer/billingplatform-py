@@ -3,16 +3,8 @@ import requests
 import unittest
 
 from billingplatform import BillingPlatform
-
-
-def get_credentials(path='credentials.json') -> dict:
-    """
-    Load credentials from a JSON file.
-    """
-    import json
-    
-    with open(path) as f:
-        return json.load(f)
+from billingplatform.api import BillingPlatformException
+from utils_for_testing import get_credentials
 
 
 class TestBillingPlatformQuery(unittest.TestCase):
@@ -20,15 +12,25 @@ class TestBillingPlatformQuery(unittest.TestCase):
         logging.basicConfig(level=logging.DEBUG)
 
         session_credentials = get_credentials()
-        bp = BillingPlatform(**session_credentials)
+        bp: BillingPlatform = BillingPlatform(**session_credentials)
 
         self.assertIsInstance(bp, BillingPlatform)
         self.assertIsInstance(bp.session, requests.Session)
 
-        data: dict = bp.query("SELECT Id, Name, Status FROM ACCOUNT WHERE 1=1")
-        #print(data)
+        response: dict = bp.query("SELECT Id, Name, Status FROM ACCOUNT WHERE 1=1")
+        #print(response)
 
-        self.assertIsInstance(data, dict)
+        self.assertIsInstance(response, dict)
+
+    def test_query_exception(self):
+        logging.basicConfig(level=logging.DEBUG)
+
+        session_credentials = get_credentials()
+        bp: BillingPlatform = BillingPlatform(**session_credentials)
+
+        self.assertIsInstance(bp, BillingPlatform)
+        self.assertIsInstance(bp.session, requests.Session)
+        self.assertRaises(BillingPlatformException, bp.query, "SELECT Id WHERE 1=1")
 
 
 if __name__ == '__main__':
