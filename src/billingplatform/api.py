@@ -2,27 +2,8 @@ import atexit
 import logging
 import requests
 
+from .utils import response_handler
 from urllib.parse import quote # for URL encoding
-
-
-class BillingPlatformException(Exception):
-    """Base exception for BillingPlatform."""
-    def __init__(self, response_code: int, response_text: str = ''):
-        self.response_code = response_code
-        self.response_text = response_text
-        
-        if self.response_code == 400:
-            super().__init__(f'Error response, bad request. {self.response_text}')
-        elif self.response_code == 401:
-            super().__init__(f'Error response, unauthorized. {self.response_text}')
-        elif self.response_code == 404: 
-            super().__init__(f'Error response, not found. {self.response_text}')
-        elif self.response_code == 429:
-            super().__init__(f'Error response, too many requests. {self.response_text}')
-        elif self.response_code == 500:
-            super().__init__(f'Error response, internal server error. {self.response_text}')
-        else:
-            super().__init__(f'Error response, code: {self.response_code}, text: {self.response_text or "<No response text provided>"}')
 
 
 class BillingPlatform:
@@ -99,8 +80,7 @@ class BillingPlatform:
             _login_response: requests.Response = self.session.post(_login_url, json=_login_payload, **self.requests_parameters)
 
             if _login_response.status_code != 200:
-                raise BillingPlatformException(response_code=_login_response.status_code,
-                                               response_text=_login_response.text)
+                raise response_handler(_login_response)
             else:
                 logging.debug(f'Login successful: {_login_response.text}')
             
@@ -141,8 +121,7 @@ class BillingPlatform:
                 _logout_response: requests.Response = self.session.post(_logout_url, **self.requests_parameters)
 
                 if _logout_response.status_code != 200:
-                    raise BillingPlatformException(response_code=_logout_response.status_code,
-                                                   response_text=_logout_response.text)
+                    raise response_handler(_logout_response)
                 else:
                     logging.debug(f'Logout successful: {_logout_response.text}')
             
@@ -169,8 +148,7 @@ class BillingPlatform:
             _query_response: requests.Response = self.session.get(_query_url, **self.requests_parameters)
 
             if _query_response.status_code != 200:
-                raise BillingPlatformException(response_code=_query_response.status_code,
-                                               response_text=_query_response.text)
+                raise response_handler(_query_response)
             else:
                 logging.debug(f'Query successful: {_query_response.text}')
             
@@ -204,8 +182,7 @@ class BillingPlatform:
             _retrieve_response: requests.Response = self.session.get(_retrieve_url, **self.requests_parameters)
 
             if _retrieve_response.status_code != 200:
-                raise BillingPlatformException(response_code=_retrieve_response.status_code,
-                                               response_text=_retrieve_response.text)
+                raise response_handler(_retrieve_response)
             else:
                 logging.debug(f'Retrieve successful: {_retrieve_response.text}')
             
@@ -240,8 +217,7 @@ class BillingPlatform:
             _retrieve_response: requests.Response = self.session.get(_retrieve_url, **self.requests_parameters)
 
             if _retrieve_response.status_code != 200:
-                raise BillingPlatformException(response_code=_retrieve_response.status_code,
-                                               response_text=_retrieve_response.text)
+                raise response_handler(_retrieve_response)
             else:
                 logging.debug(f'Retrieve successful: {_retrieve_response.text}')
             
