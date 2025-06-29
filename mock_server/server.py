@@ -108,25 +108,100 @@ def retrieve_by_id(entity: str, record_id: int):
     return retrieve_response
 
 
-@app.route("/rest/2.0/<string:entity>")
-def retrieve_by_query(entity: str):
+@app.route("/rest/2.0/<string:entity>", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+def crud_methods(entity: str):
     """
     Mock query endpoint for BillingPlatform API.
 
     :param entity: The entity to retrieve records from.
     :return: A mock retrieve response containing the results of a query as a dictionary or JSON of records.
     """
-    ansi_sql: str = request.args.get('queryAnsiSql')
+    if request.method not in ["GET", "POST", "PUT", "PATCH", "DELETE"]:
+        return {"error": "Method not allowed"}, 405
+    
+    if request.method == "GET":
+        ansi_sql: str = request.args.get('queryAnsiSql')
 
-    if ansi_sql:
-        # Parse the incoming ANSI SQL query
-        app.logger.debug(f"ANSI SQL: {ansi_sql}")
+        if ansi_sql:
+            # Parse the incoming ANSI SQL query
+            app.logger.debug(f"ANSI SQL: {ansi_sql}")
 
-    retrieve_response = {
-        "retrieveResponse": data
-    }
+        retrieve_response = {
+            "retrieveResponse": data
+        }
 
-    return retrieve_response
+        return retrieve_response
+    
+    # Create
+    if request.method == "POST":
+        # Handle POST request logic here
+        if not request.json:
+            return {"error": "Invalid input"}, 400
+        
+        app.logger.debug(f"Received POST data: {request.json}")
+
+        create_response = {
+            "createResponse": {
+                "message": "Record created successfully",
+                "entity": entity,
+                "record_id": len(data) + 1
+            }
+        }
+
+        return create_response
+    
+    # Update
+    if request.method == "PUT":
+        # Handle PUT request logic here
+        if not request.json:
+            return {"error": "Invalid input"}, 400
+        
+        app.logger.debug(f"Received PUT data: {request.json}")
+
+        update_response = {
+            "updateResponse": {
+                "message": "Record updated successfully",
+                "entity": entity
+            }
+        }
+
+        return update_response
+    
+    # Upsert
+    if request.method == "PATCH":
+        # Handle PATCH request logic here
+        if not request.json:
+            return {"error": "Invalid input"}, 400
+        
+        app.logger.debug(f"Received PATCH data: {request.json}")
+
+        upsert_response = {
+            "upsertResponse": [
+                {
+                    "Id": 0,
+                    "success": True,
+                    "ErrorText": "string",
+                    "ErrorElementField": "string",
+                    "created": True
+                }
+            ]
+        }
+
+        return upsert_response
+    
+    # Delete
+    if request.method == "DELETE":
+        # Handle DELETE request logic here
+        app.logger.debug(f"Received DELETE data: {request.json}")
+
+        delete_response = {
+            "deleteResponse": {
+                "message": "Record deleted successfully",
+                "entity": entity
+            }
+        }
+
+        return delete_response
 
 
 if __name__ == "__main__":

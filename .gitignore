@@ -174,4 +174,4 @@ cython_debug/
 .pypirc
 
 # Credentials file used in testing
-credentials.json
+credentials.json*

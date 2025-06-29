@@ -6,8 +6,8 @@ from billingplatform import BillingPlatform
 from utils_for_testing import get_credentials
 
 
-class TestBillingPlatformRetrieve(unittest.TestCase):
-    def test_retrieve_by_id(self):
+class TestBillingPlatformDelete(unittest.TestCase):
+    def test_basic_delete(self):
         logging.basicConfig(level=logging.DEBUG)
 
         session_credentials = get_credentials()
@@ -16,11 +16,15 @@ class TestBillingPlatformRetrieve(unittest.TestCase):
         self.assertIsInstance(bp, BillingPlatform)
         self.assertIsInstance(bp.session, requests.Session)
 
-        response: dict = bp.retrieve_by_id("ACCOUNT", record_id=10)
+        payload: dict = {
+            'Id': '12345' 
+        }
+
+        response: dict = bp.delete(entity='ACCOUNT', data=payload)
 
         self.assertIsInstance(response, dict)
-    
-    def test_retrieve_with_query(self):
+
+    def test_brmobject_delete(self):
         logging.basicConfig(level=logging.DEBUG)
 
         session_credentials = get_credentials()
@@ -29,7 +33,13 @@ class TestBillingPlatformRetrieve(unittest.TestCase):
         self.assertIsInstance(bp, BillingPlatform)
         self.assertIsInstance(bp.session, requests.Session)
 
-        response: dict = bp.retrieve_by_query("ACCOUNT", queryAnsiSql="Id > 0")
+        payload: dict = {
+            'brmObjects': {
+                'Id': '12345' # Example ID, replace with a valid one
+            }
+        }
+
+        response: dict = bp.delete(entity='ACCOUNT', data=payload)
 
         self.assertIsInstance(response, dict)
 

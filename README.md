@@ -32,12 +32,12 @@ except Exception as e:
     print(f"An error occurred: {e}")
 ```
 
-Please note: The available methods and their functionalities are still being expanded. Refer to the source code or future documentation for the most up-to-date usage examples. The tests will also provide a good source for examples.
+Please note: The available methods and their functionalities are still being expanded. Refer to the [documentation](docs/README.md), source code, or tests for the most up-to-date usage examples.
 
 ## Contributions
 
 This is a community-driven project, and we welcome contributions! Whether you're fixing a bug, adding a new feature, improving documentation, or suggesting enhancements, your input is valuable.
 
-If you encounter any issues or have suggestions, please don't hesitate to open an issue on our GitHub Issues page.
+If you encounter any issues or have suggestions, please don't hesitate to open an issue on our GitHub Issues page and fork the repository and create a pull request.
 
-We're excited to have you as part of our community as we work towards a robust and complete version 1.0 of this library!
+We're excited to have you as part of our community as we work towards a robust and complete version 1.0

@@ -3,7 +3,7 @@ import requests
 import unittest
 
 from billingplatform import BillingPlatform
-from billingplatform.api import BillingPlatformException
+from billingplatform.exceptions import BillingPlatformException
 from utils_for_testing import get_credentials
 
 
@@ -18,7 +18,6 @@ class TestBillingPlatformQuery(unittest.TestCase):
         self.assertIsInstance(bp.session, requests.Session)
 
         response: dict = bp.query("SELECT Id, Name, Status FROM ACCOUNT WHERE 1=1")
-        #print(response)
 
         self.assertIsInstance(response, dict)
 

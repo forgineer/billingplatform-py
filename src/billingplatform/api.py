@@ -2,7 +2,7 @@ import atexit
 import logging
 import requests
 
-from .utils import response_handler
+from .handlers import response_handler
 from urllib.parse import quote # for URL encoding
 
 
@@ -47,6 +47,10 @@ class BillingPlatform:
         self.logout_at_exit: bool = logout_at_exit
         self.session: requests.Session = requests.Session()
 
+        # Construct base URLs
+        self.auth_base_url: str = f'{self.base_url}/auth/{self.auth_api_version}'
+        self.rest_base_url: str = f'{self.base_url}/rest/{self.rest_api_version}'
+
 
         if all([username, password]):
             self.login()
@@ -68,7 +72,7 @@ class BillingPlatform:
         else:
             logging.warning('Automatic logout at exit has been disabled. You must call logout() manually to close the session.')
         
-        _login_url: str = f'{self.base_url}/rest/{self.rest_api_version}/login'
+        _login_url: str = f'{self.rest_base_url}/login'
         
         # Update session headers
         _login_payload: dict = {
@@ -105,7 +109,7 @@ class BillingPlatform:
         """
         Authenticate with the BillingPlatform API using OAuth and return an access token.
         """
-        ...
+        raise NotImplementedError("OAuth login functionality is not implemented yet.")
 
 
     def logout(self) -> None:
@@ -117,7 +121,7 @@ class BillingPlatform:
         """
         try:
             if self.session.headers.get('sessionid'):
-                _logout_url: str = f'{self.base_url}/rest/{self.rest_api_version}/logout'
+                _logout_url: str = f'{self.rest_base_url}/logout'
                 _logout_response: requests.Response = self.session.post(_logout_url, **self.requests_parameters)
 
                 if _logout_response.status_code != 200:
@@ -140,7 +144,7 @@ class BillingPlatform:
         :raises Exception: If query fails or response does not contain expected data.
         """
         _url_encoded_sql: str = quote(sql)
-        _query_url: str = f'{self.base_url}/rest/{self.rest_api_version}/query?sql={_url_encoded_sql}'
+        _query_url: str = f'{self.rest_base_url}/query?sql={_url_encoded_sql}'
 
         logging.debug(f'Query URL: {_query_url}')
 
@@ -167,14 +171,14 @@ class BillingPlatform:
                        entity: str, 
                        record_id: int) -> dict:
         """
-        Retrieve records from the BillingPlatform API.
+        Retrieve an individual record from the BillingPlatform API.
         
         :param entity: The entity to retrieve records from.
-        :param record_id: The ID of the record to retrieve.
+        :param record_id: The 'Id' of the record to retrieve.
         :return: The retrieve response data.
         :raises Exception: If retrieve fails or response does not contain expected data.
         """
-        _retrieve_url: str = f'{self.base_url}/rest/{self.rest_api_version}/{entity}/{record_id}'
+        _retrieve_url: str = f'{self.rest_api_version}/{entity}/{record_id}'
         
         logging.debug(f'Retrieve URL: {_retrieve_url}')
 
@@ -201,7 +205,7 @@ class BillingPlatform:
                           entity: str, 
                           queryAnsiSql: str) -> dict:
         """
-        Retrieve records from the BillingPlatform API.
+        Retrieve whole records from the BillingPlatform API with a query.
         
         :param entity: The entity to retrieve records from.
         :param queryAnsiSql: Optional ANSI SQL query to filter records.
@@ -209,7 +213,7 @@ class BillingPlatform:
         :raises Exception: If retrieve fails or response does not contain expected data.
         """
         _url_encoded_sql: str = quote(queryAnsiSql)
-        _retrieve_url: str = f'{self.base_url}/rest/{self.rest_api_version}/{entity}?queryAnsiSql={_url_encoded_sql}'
+        _retrieve_url: str = f'{self.rest_api_version}/{entity}?queryAnsiSql={_url_encoded_sql}'
         
         logging.debug(f'Retrieve URL: {_retrieve_url}')
 
@@ -233,32 +237,193 @@ class BillingPlatform:
 
 
     # Post
-    def create(self, ):
-        ...
+    def create(self, 
+               entity: str, 
+               data: list[dict] | dict) -> dict:
+        """        
+        Create records in BillingPlatform.
+
+        :param entity: The entity to create a record for.
+        :param data: The data to create the record with.
+        :return: The create response data.
+        :raises Exception: If create fails or response does not contain expected data.
+        """
+        _create_url: str = f'{self.rest_base_url}/{entity}'
+        logging.debug(f'Create URL: {_create_url}')
+
+        _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
+
+        if not _data.get('brmObjects', False):
+            _data = {
+                'brmObjects': data
+            }
+
+        logging.debug(f'Create data payload: {_data}')
+
+        try:
+            _create_response: requests.Response = self.session.post(_create_url, json=_data, **self.requests_parameters)
+
+            if _create_response.status_code != 200:
+                raise response_handler(_create_response)
+            else:
+                logging.debug(f'Create successful: {_create_response.text}')
+            
+            # Retrieve 'createResponse' data
+            _create_response_data: dict = _create_response.json()
+
+            if not _create_response_data:
+                raise Exception('Create response did not contain createResponse data.')
+
+            return _create_response_data
+        except requests.RequestException as e:
+            raise Exception(f'Failed to create record: {e}')
 
 
     # Put
-    def update(self, ):
-        ...
+    def update(self, 
+               entity: str, 
+               data: list[dict] | dict) -> dict:
+        """
+        Update records in BillingPlatform.
+
+        :param entity: The entity to update records for.
+        :param data: The data to update the records with.
+        :return: The update response data.
+        :raises Exception: If update fails or response does not contain expected data.
+        """
+        _update_url: str = f'{self.rest_base_url}/{entity}'
+        logging.debug(f'Update URL: {_update_url}')
+
+        _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
+
+        if not data.get('brmObjects', False):
+            _data = {
+                'brmObjects': data
+            }
+
+        logging.debug(f'Update data payload: {_data}')
+
+        try:
+            _update_response: requests.Response = self.session.put(_update_url, json=_data, **self.requests_parameters)
+
+            if _update_response.status_code != 200:
+                raise response_handler(_update_response)
+            else:
+                logging.debug(f'Update successful: {_update_response.text}')
+            
+            # Retrieve 'updateResponse' data
+            _update_response_data: dict = _update_response.json()
+
+            if not _update_response_data:
+                raise Exception('Update response did not contain updateResponse data.')
+
+            return _update_response_data
+        except requests.RequestException as e:
+            raise Exception(f'Failed to update record: {e}')
 
 
     # Patch
-    def upsert(self, ):
-        ...
+    def upsert(self, 
+               entity: str, 
+               data: list[dict] | dict,
+               externalIDFieldName: str) -> dict:
+        """
+        Upsert records in BillingPlatform.
+
+        :param entity: The entity to upsert records for.
+        :param data: The data to upsert the records with.
+        :param externalIDFieldName: The name of the external ID field to use for upsert.
+        :return: The upsert response data.
+        :raises Exception: If upsert fails or response does not contain expected data.
+        """
+        _upsert_url: str = f'{self.rest_base_url}/{entity}'
+        logging.debug(f'Upsert URL: {_upsert_url}')
+
+        _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
+
+        if not data.get('brmObjects', False):
+            _data = {
+                'brmObjects': data,
+                'externalIDFieldName': externalIDFieldName
+            }
+        else:
+            _data['externalIDFieldName'] = externalIDFieldName
+
+        logging.debug(f'Upsert data payload: {_data}')
+
+        try:
+            _upsert_response: requests.Response = self.session.patch(_upsert_url, json=_data, **self.requests_parameters)
+
+            if _upsert_response.status_code != 200:
+                raise response_handler(_upsert_response)
+            else:
+                logging.debug(f'Upsert successful: {_upsert_response.text}')
+            
+            # Retrieve 'upsertResponse' data
+            _upsert_response_data: dict = _upsert_response.json()
+
+            if not _upsert_response_data:
+                raise Exception('Upsert response did not contain upsertResponse data.')
+
+            return _upsert_response_data
+        except requests.RequestException as e:
+            raise Exception(f'Failed to upsert record: {e}')
 
 
     # Delete
-    def delete(self, ):
-        ...
+    def delete(self, 
+               entity: str, 
+               data: list[dict] | dict) -> dict:
+        """
+        Delete records from BillingPlatform.
+
+        :param entity: The entity to delete a record from.
+        :param data: The data to delete the record with.
+        :return: The delete response data.
+        :raises Exception: If delete fails or response does not contain expected data.
+        """
+        _delete_url: str = f'{self.rest_base_url}/{entity}'
+        logging.debug(f'Delete URL: {_delete_url}')
+
+        _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
+
+        if not data.get('brmObjects', False):
+            _data = {
+                'brmObjects': data
+            }
+
+        logging.debug(f'Delete data payload: {_data}')
+
+        try:
+            _delete_response: requests.Response = self.session.delete(_delete_url, json=data, **self.requests_parameters)
+
+            if _delete_response.status_code != 200:
+                raise response_handler(_delete_response)
+            else:
+                logging.debug(f'Delete successful: {_delete_response.text}')
+            
+            # Retrieve 'deleteResponse' data
+            _delete_response_data: dict = _delete_response.json()
+
+            if not _delete_response_data:
+                raise Exception('Delete response did not contain deleteResponse data.')
+
+            return _delete_response_data
+        except requests.RequestException as e:
+            raise Exception(f'Failed to delete records: {e}')
 
 
     def undelete(self, ):
-        ...
+        raise NotImplementedError("Undelete functionality is not implemented yet.")
 
+    def bulk_request(self, ):
+        raise NotImplementedError("Bulk request functionality is not implemented yet.")
+    
+    def bulk_retreive(self, ):
+        raise NotImplementedError("Bulk retrieve functionality is not implemented yet.")
 
     def file_upload(self, file_path: str):
-        ...
-
+        raise NotImplementedError("File upload functionality is not implemented yet.")
 
     def file_download(self, file_id: str):
-        ...
+        raise NotImplementedError("File download functionality is not implemented yet.")
