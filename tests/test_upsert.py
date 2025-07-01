@@ -16,13 +16,30 @@ class TestBillingPlatformUpsert(unittest.TestCase):
         self.assertIsInstance(bp, BillingPlatform)
         self.assertIsInstance(bp.session, requests.Session)
 
+        # Single record upsert
         payload: dict = {
             'Id': '12345', # Example ID, replace with a valid one
             'Name': 'Test Account',
             'Status': 'ACTIVE',
             'externalId': 'ext-12345' # Example ID, replace with a valid one
         }
+        response: dict = bp.upsert(entity='ACCOUNT', data=payload, externalIDFieldName='externalId')
 
+        # Multiple records upsert
+        payload: list[dict] = [
+            {
+                'Id': '12345', # Example ID, replace with a valid one
+                'Name': 'Test Account 1',
+                'Status': 'ACTIVE',
+                'externalId': 'ext-12345' # Example ID, replace with a valid one
+            },
+            {
+                'Id': '67890', # Example ID, replace with a valid one
+                'Name': 'Test Account 2',
+                'Status': 'ACTIVE',
+                'externalId': 'ext-67890' # Example ID, replace with a valid one
+            }
+        ]
         response: dict = bp.upsert(entity='ACCOUNT', data=payload, externalIDFieldName='externalId')
 
         self.assertIsInstance(response, dict)

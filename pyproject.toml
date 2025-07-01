@@ -1,12 +1,12 @@
 [project]
 name='billingplatform'
-version='0.1.5'
+version='0.1.6'
 authors = [
     {name = 'forgineer', email = 'blake.phillips86@gmail.com'},
 ]
 description='A community driven Python library for working with BillingPlatform APIs.'
 readme = 'README.md' # Long description
-license = {text = 'Apache-2.0'}
+license = 'Apache-2.0'
 requires-python = ">=3.11"
 dependencies = [
     'requests',

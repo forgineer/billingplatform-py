@@ -178,7 +178,7 @@ class BillingPlatform:
         :return: The retrieve response data.
         :raises Exception: If retrieve fails or response does not contain expected data.
         """
-        _retrieve_url: str = f'{self.rest_api_version}/{entity}/{record_id}'
+        _retrieve_url: str = f'{self.rest_base_url}/{entity}/{record_id}'
         
         logging.debug(f'Retrieve URL: {_retrieve_url}')
 
@@ -213,7 +213,7 @@ class BillingPlatform:
         :raises Exception: If retrieve fails or response does not contain expected data.
         """
         _url_encoded_sql: str = quote(queryAnsiSql)
-        _retrieve_url: str = f'{self.rest_api_version}/{entity}?queryAnsiSql={_url_encoded_sql}'
+        _retrieve_url: str = f'{self.rest_base_url}/{entity}?queryAnsiSql={_url_encoded_sql}'
         
         logging.debug(f'Retrieve URL: {_retrieve_url}')
 
@@ -253,7 +253,7 @@ class BillingPlatform:
 
         _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
 
-        if not _data.get('brmObjects', False):
+        if not isinstance(_data, dict) or 'brmObjects' not in _data:
             _data = {
                 'brmObjects': data
             }
@@ -296,7 +296,7 @@ class BillingPlatform:
 
         _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
 
-        if not data.get('brmObjects', False):
+        if not isinstance(_data, dict) or 'brmObjects' not in _data:
             _data = {
                 'brmObjects': data
             }
@@ -341,7 +341,7 @@ class BillingPlatform:
 
         _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
 
-        if not data.get('brmObjects', False):
+        if not isinstance(_data, dict) or 'brmObjects' not in _data:
             _data = {
                 'brmObjects': data,
                 'externalIDFieldName': externalIDFieldName
@@ -387,7 +387,7 @@ class BillingPlatform:
 
         _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
 
-        if not data.get('brmObjects', False):
+        if not isinstance(_data, dict) or 'brmObjects' not in _data:
             _data = {
                 'brmObjects': data
             }
@@ -395,7 +395,7 @@ class BillingPlatform:
         logging.debug(f'Delete data payload: {_data}')
 
         try:
-            _delete_response: requests.Response = self.session.delete(_delete_url, json=data, **self.requests_parameters)
+            _delete_response: requests.Response = self.session.delete(_delete_url, json=_data, **self.requests_parameters)
 
             if _delete_response.status_code != 200:
                 raise response_handler(_delete_response)

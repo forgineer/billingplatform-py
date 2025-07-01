@@ -16,12 +16,28 @@ class TestBillingPlatformUpdate(unittest.TestCase):
         self.assertIsInstance(bp, BillingPlatform)
         self.assertIsInstance(bp.session, requests.Session)
 
+        # Single record update
         payload: dict = {
             'Id': '12345', # Example ID, replace with a valid one
             'Name': 'Test Account 1',
             'Status': 'ACTIVE'
         }
+        response: dict = bp.update(entity='ACCOUNT', data=payload)
 
+        # Multiple records update
+        payload: list[dict] = [
+            {
+                'Id': '12345', # Example ID, replace with a valid one
+                'Name': 'Test Account 1',
+                'Status': 'ACTIVE'
+            },
+            {
+                'Id': '67890', # Example ID, replace with a valid one
+                'Name': 'Test Account 2',
+                'Status': 'ACTIVE'
+            }
+
+        ]
         response: dict = bp.update(entity='ACCOUNT', data=payload)
 
         self.assertIsInstance(response, dict)

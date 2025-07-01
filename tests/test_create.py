@@ -17,11 +17,24 @@ class TestBillingPlatformCreate(unittest.TestCase):
         self.assertIsInstance(bp, BillingPlatform)
         self.assertIsInstance(bp.session, requests.Session)
 
+        # Single record creation
         payload: dict = {
             'Name': 'Test Account 1',
             'Status': 'ACTIVE'
         }
+        response: dict = bp.create(entity='ACCOUNT', data=payload)
 
+        # Multiple records creation
+        payload: list[dict] = [
+            {
+                'Name': 'Test Account 1',
+                'Status': 'ACTIVE'
+            },
+            {
+                'Name': 'Test Account 2',
+                'Status': 'ACTIVE'
+            }
+        ]
         response: dict = bp.create(entity='ACCOUNT', data=payload)
 
         self.assertIsInstance(response, dict)

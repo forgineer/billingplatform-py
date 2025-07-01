@@ -16,10 +16,21 @@ class TestBillingPlatformDelete(unittest.TestCase):
         self.assertIsInstance(bp, BillingPlatform)
         self.assertIsInstance(bp.session, requests.Session)
 
+        # Single record deletion
         payload: dict = {
             'Id': '12345' 
         }
+        response: dict = bp.delete(entity='ACCOUNT', data=payload)
 
+        # Multiple records deletion
+        payload: list[dict] = [
+            {
+                'Id': '12345'
+            },
+            {
+                'Id': '67890'
+            }
+        ]
         response: dict = bp.delete(entity='ACCOUNT', data=payload)
 
         self.assertIsInstance(response, dict)
