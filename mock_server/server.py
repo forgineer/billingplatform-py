@@ -108,15 +108,15 @@ def retrieve_by_id(entity: str, record_id: int):
     return retrieve_response
 
 
-@app.route("/rest/2.0/<string:entity>", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
-def crud_methods(entity: str):
+@app.route("/rest/2.0/<string:entity>", methods=["GET", "POST", "PUT", "PATCH"])
+def cruu_methods(entity: str):
     """
     Mock query endpoint for BillingPlatform API.
 
     :param entity: The entity to retrieve records from.
     :return: A mock retrieve response containing the results of a query as a dictionary or JSON of records.
     """
-    if request.method not in ["GET", "POST", "PUT", "PATCH", "DELETE"]:
+    if request.method not in ["GET", "POST", "PUT", "PATCH"]:
         return {"error": "Method not allowed"}, 405
     
     if request.method == "GET":
@@ -188,6 +188,18 @@ def crud_methods(entity: str):
         }
 
         return upsert_response
+
+
+@app.route("/rest/2.0/delete/<string:entity>", methods=["DELETE"])
+def delete(entity: str):
+    """
+    Mock query endpoint for BillingPlatform API.
+
+    :param entity: The entity to retrieve records from.
+    :return: A mock retrieve response containing the results of a query as a dictionary or JSON of records.
+    """
+    if request.method not in ["DELETE"]:
+        return {"error": "Method not allowed"}, 405
     
     # Delete
     if request.method == "DELETE":

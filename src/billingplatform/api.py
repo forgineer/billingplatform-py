@@ -373,24 +373,29 @@ class BillingPlatform:
     # Delete
     def delete(self, 
                entity: str, 
-               data: list[dict] | dict) -> dict:
+               data: list[dict] | dict,
+               EmptyRecycleBin: bool = False) -> dict:
         """
         Delete records from BillingPlatform.
 
         :param entity: The entity to delete a record from.
         :param data: The data to delete the record with.
+        :param EmptyRecycleBin: Whether to permanently delete the record (default is False).
         :return: The delete response data.
         :raises Exception: If delete fails or response does not contain expected data.
         """
-        _delete_url: str = f'{self.rest_base_url}/{entity}'
+        _delete_url: str = f'{self.rest_base_url}/delete/{entity}'
         logging.debug(f'Delete URL: {_delete_url}')
 
         _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
 
         if not isinstance(_data, dict) or 'brmObjects' not in _data:
             _data = {
-                'brmObjects': data
+                'brmObjects': data,
+                'EmptyRecycleBin': '0' if not EmptyRecycleBin else '1'
             }
+        else:
+            _data['EmptyRecycleBin'] = '0' if not EmptyRecycleBin else '1'
 
         logging.debug(f'Delete data payload: {_data}')
 
