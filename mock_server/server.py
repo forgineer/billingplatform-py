@@ -8,14 +8,18 @@ from utils import QueryParser
 # Configure logging for the Flask application
 dictConfig({
     'version': 1,
-    'formatters': {'default': {
-        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
-    }},
-    'handlers': {'wsgi': {
-        'class': 'logging.StreamHandler',
-        'stream': 'ext://flask.logging.wsgi_errors_stream',
-        'formatter': 'default'
-    }},
+    'formatters': {
+        'default': {
+            'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+        }
+    },
+    'handlers': {
+        'wsgi': {
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://flask.logging.wsgi_errors_stream',
+            'formatter': 'default'
+        }
+    },
     'root': {
         'level': 'INFO',
         'handlers': ['wsgi']
@@ -36,7 +40,7 @@ def login():
     """
     Mock login endpoint for BillingPlatform API.
 
-    :return: A mock login response containing a session ID and an error code of 0, indicating success.
+    :return: A mock login response containing a fake session ID.
     """
     login_response = {
         "loginResponse": [
@@ -59,10 +63,11 @@ def logout():
     :return: A mock logout response containing an error code of 0, indicating success.
     """
     logout_response = {
-        "logoutResponse": [
+        "logoutResponse":[
             {
-                "ErrorCode": "0",
-                "ErrorText": []
+                "ErrorCode":"0",
+                "ErrorText":" ",
+                "Success":"true"
             }
         ]
     }
@@ -75,7 +80,7 @@ def query():
     """
     Mock query endpoint for BillingPlatform API.
 
-    :return: A mock query response containing the results of a query as a dictionary or JSON of records.
+    :return: A mock query response containing the results of a query as a dictionary or JSON payload of records.
     """
     sql_query: str = request.args.get('sql')
     
@@ -95,11 +100,11 @@ def query():
 @app.route("/rest/2.0/<string:entity>/<int:record_id>")
 def retrieve_by_id(entity: str, record_id: int):
     """
-    Mock query endpoint for BillingPlatform API.
+    Mock retrieve endpoint for BillingPlatform API.
 
     :param entity: The entity to retrieve records from.
     :param record_id: The ID of the record to retrieve.
-    :return: A mock retrieve response containing the results of a query as a dictionary or JSON of records.
+    :return: A mock retrieve response containing the results of the request as a dictionary or JSON payload of records.
     """
     retrieve_response = {
         "retrieveResponse": data[record_id] if record_id < len(data) else {}
@@ -111,14 +116,16 @@ def retrieve_by_id(entity: str, record_id: int):
 @app.route("/rest/2.0/<string:entity>", methods=["GET", "POST", "PUT", "PATCH"])
 def cruu_methods(entity: str):
     """
-    Mock query endpoint for BillingPlatform API.
+    Mock create, retrieve, update, and upsert endpoint for BillingPlatform API.
 
-    :param entity: The entity to retrieve records from.
-    :return: A mock retrieve response containing the results of a query as a dictionary or JSON of records.
+    :param entity: The entity to perform the CRUU operation on.
+    :return: A mock response containing the results of an action as a dictionary or JSON payload of records.
     """
     if request.method not in ["GET", "POST", "PUT", "PATCH"]:
         return {"error": "Method not allowed"}, 405
     
+    # Retrieve
+    # Handle GET request logic here
     if request.method == "GET":
         ansi_sql: str = request.args.get('queryAnsiSql')
 
@@ -133,8 +140,8 @@ def cruu_methods(entity: str):
         return retrieve_response
     
     # Create
+    # Handle POST request logic here
     if request.method == "POST":
-        # Handle POST request logic here
         if not request.json:
             return {"error": "Invalid input"}, 400
         
@@ -151,8 +158,8 @@ def cruu_methods(entity: str):
         return create_response
     
     # Update
+    # Handle PUT request logic here
     if request.method == "PUT":
-        # Handle PUT request logic here
         if not request.json:
             return {"error": "Invalid input"}, 400
         
@@ -168,8 +175,8 @@ def cruu_methods(entity: str):
         return update_response
     
     # Upsert
+    # Handle PATCH request logic here
     if request.method == "PATCH":
-        # Handle PATCH request logic here
         if not request.json:
             return {"error": "Invalid input"}, 400
         
@@ -193,10 +200,10 @@ def cruu_methods(entity: str):
 @app.route("/rest/2.0/delete/<string:entity>", methods=["DELETE"])
 def delete(entity: str):
     """
-    Mock query endpoint for BillingPlatform API.
+    Mock delete endpoint for BillingPlatform API.
 
-    :param entity: The entity to retrieve records from.
-    :return: A mock retrieve response containing the results of a query as a dictionary or JSON of records.
+    :param entity: The entity to delete records from.
+    :return: A mock delete response as a dictionary or JSON payload.
     """
     if request.method not in ["DELETE"]:
         return {"error": "Method not allowed"}, 405
@@ -214,6 +221,54 @@ def delete(entity: str):
         }
 
         return delete_response
+
+
+@app.route("/rest/2.0/undelete/<string:entity>", methods=["DELETE"])
+def undelete(entity: str):
+    """
+    Mock undelete endpoint for BillingPlatform API.
+
+    :param entity: The entity to undelete records from.
+    :return: A mock undelete response as a dictionary or JSON payload.
+    """
+    # Delete
+    if request.method == "DELETE":
+        # Handle DELETE request logic here
+        app.logger.debug(f"Received UNDELETE data: {request.json}")
+
+        delete_response = {
+            "deleteResponse": {
+                "message": "Record deleted successfully",
+                "entity": entity
+            }
+        }
+
+        return delete_response
+
+
+@app.route("/rest/2.0/bulk_api_request", methods=["POST"])
+def bulk_request():
+    """
+    Mock bulk extract request endpoint for BillingPlatform API.
+
+    :param entity: The entity to request a bulk extract for.
+    :return: A mock response for the bulk request as a dictionary or JSON payload.
+    """
+    # Bulk API requests
+    app.logger.debug(f"Received BULK REQUEST data: {request.json}")
+
+    bulk_response = {
+        "createResponse": [
+            {
+                "ErrorCode": "0",
+                "ErrorText": " ",
+                "ErrorElementField": " ",
+                "Id": "8675309"
+            }
+        ]
+    }
+
+    return bulk_response
 
 
 if __name__ == "__main__":

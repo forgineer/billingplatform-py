@@ -3,6 +3,7 @@ import logging
 import requests
 
 from . import exceptions
+from typing import Literal
 from urllib.parse import quote # for URL encoding
 
 
@@ -123,6 +124,13 @@ class BillingPlatform:
     
 
     def oauth_login(self) -> None:
+        """
+        Authenticate with the BillingPlatform API using OAuth and return an access token.
+        """
+        raise NotImplementedError("OAuth login functionality is not implemented yet.")
+
+
+    def oauth_token(self, refresh_token: str) -> None:
         """
         Authenticate with the BillingPlatform API using OAuth and return an access token.
         """
@@ -351,7 +359,8 @@ class BillingPlatform:
                 'EmptyRecycleBin': _EmptyRecycleBin
             }
         else:
-            _data['EmptyRecycleBin'] = _EmptyRecycleBin
+            if 'EmptyRecycleBin' not in _data:
+                _data['EmptyRecycleBin'] = _EmptyRecycleBin
 
         logging.debug(f'Delete data payload: {_data}')
 
@@ -365,17 +374,131 @@ class BillingPlatform:
             raise Exception(f'Failed to delete records: {e}')
 
 
-    def undelete(self, ):
-        raise NotImplementedError("Undelete functionality is not implemented yet.")
+    def undelete(self, 
+                 entity: str, 
+                 data: list[dict] | dict) -> dict:
+        """
+        Undelete records in BillingPlatform.
 
-    def bulk_request(self, ):
-        raise NotImplementedError("Bulk request functionality is not implemented yet.")
-    
-    def bulk_retreive(self, ):
-        raise NotImplementedError("Bulk retrieve functionality is not implemented yet.")
+        :param entity: The entity to undelete records for.
+        :param data: The data to undelete the records with.
+        :return: The undelete response data.
+        """
+        _undelete_url: str = f'{self.rest_base_url}/undelete/{entity}'
+        logging.debug(f'Undelete URL: {_undelete_url}')
+
+        _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
+
+        if not isinstance(_data, dict) or 'brmObjects' not in _data:
+            _data = {
+                'brmObjects': data
+            }
+
+        logging.debug(f'Undelete data payload: {_data}')
+
+        try:
+            _undelete_response: dict = self._response_handler(
+                self.session.delete(_undelete_url, json=_data, **self.requests_parameters)
+            )
+
+            return _undelete_response
+        except requests.RequestException as e:
+            raise Exception(f'Failed to undelete records: {e}')
+        
+
+    def bulk_query_request(self,
+                           RequestName: str,
+                           RequestBody: str,
+                           RequestsPerBatch: int = 10000,
+                           ResponseFormat: Literal['CSV', 'JSON'] = "JSON") -> dict:
+        """
+        Perform a bulk query request to the BillingPlatform API.
+
+        :param RequestName: Descriptive name of the new request.
+        :param RequestBody: The request payload created using the BillingPlatform Query Language. The payload length cannot exceed 4000 characters.
+        :param RequestsPerBatch: Number of records returned in one batch (default is 10000).
+        :return: A response containing the ID of the request being processed.
+        """
+        _bulk_query_url: str = f'{self.rest_base_url}/bulk_api_request'
+        logging.debug(f'Bulk query request URL: {_bulk_query_url}')
+
+        _data: dict = {
+            'brmObjects': {
+                'RequestName': RequestName,
+                'RequestBody': RequestBody,
+                'RequestsPerBatch': RequestsPerBatch,
+                'ResponseFormat': ResponseFormat,
+                'RequestMethod': 'QUERY'  # Default to QUERY method
+            }
+        }
+
+        logging.debug(f'Bulk query request payload: {_data}')
+
+        try:
+            _bulk_query_response: dict = self._response_handler(
+                self.session.post(_bulk_query_url, json=_data, **self.requests_parameters)
+            )
+
+            return _bulk_query_response
+        except requests.RequestException as e:
+            raise Exception(f'Failed to post bulk query request: {e}')
+
+
+    def bulk_retrieve_request(self, 
+                              RequestName: str,
+                              RequestBody: str,
+                              RetrieveEntityName: str,
+                              Columns: list[str] | None = None,
+                              RequestsPerBatch: int = 10000,
+                              CSVDelimiter: str = ',',
+                              CSVQualifier: str = '\"',
+                              CSVEndLineFormat: Literal['CR', 'LF', 'CRLF'] = "CRLF") -> dict:
+        """
+        Perform a bulk retrieve request to the BillingPlatform API.
+
+        :param RequestName: Descriptive name of the new request.
+        :param RequestBody: The request payload created using a standard ANSI SQL query.
+        :param RetrieveEntityName: The name of the entity to retrieve records from.
+        :param Columns: Optional list of columns to retrieve. If None, all columns are retrieved.
+        :param RequestsPerBatch: Number of records returned in one batch (default is 10000).
+        :param CSVDelimiter: Delimiter for CSV format (default is ',').
+        :param CSVQualifier: Qualifier for CSV format (default is '\"').
+        :param CSVEndLineFormat: End line format for CSV (default is 'CRLF').
+        :return: A response containing the ID of the request being processed.
+        """
+        _bulk_query_url: str = f'{self.rest_base_url}/bulk_api_request'
+        logging.debug(f'Bulk retrieve request URL: {_bulk_query_url}')
+
+        _data: dict = {
+            'brmObjects': {
+                'RequestName': RequestName,
+                'RequestBody': RequestBody,
+                'RequestsPerBatch': RequestsPerBatch,
+                'RetrieveEntityName': RetrieveEntityName,
+                'Columns': Columns if Columns is not None else [],
+                'CSVDelimiter': CSVDelimiter,
+                'CSVQualifier': CSVQualifier,
+                'CSVEndLineFormat': CSVEndLineFormat,
+                'RequestMethod': 'RETRIEVE',  # Default to RETRIEVE method
+                'ResponseFormat': 'CSV'  # Default response format
+            }
+        }
+
+        logging.debug(f'Bulk retrieve request payload: {_data}')
+
+        try:
+            _bulk_retrieve_response: dict = self._response_handler(
+                self.session.post(_bulk_query_url, json=_data, **self.requests_parameters)
+            )
+
+            return _bulk_retrieve_response
+        except requests.RequestException as e:
+            raise Exception(f'Failed to post bulk retrieve request: {e}')
+
 
     def file_upload(self, file_path: str):
         raise NotImplementedError("File upload functionality is not implemented yet.")
+
 
     def file_download(self, file_id: str):
         raise NotImplementedError("File download functionality is not implemented yet.")
