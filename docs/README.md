@@ -1,123 +1,78 @@
-# BillingPlatform API Client
+# Documentation
 
-This module provides the `BillingPlatform` class, a Python client for interacting with the BillingPlatform REST API. It supports authentication, querying, and CRUD operations.
+Welcome to the documentation for the BillingPlatform Python library! This package provides a simple, robust interface for interacting with the BillingPlatform REST API, supporting authentication, querying, and record management.
 
-## Class: `BillingPlatform`
+## Getting Started
 
-### Initialization
+### Installation
+
+Install the library using pip:
+
+```sh
+pip install billingplatform
+```
+
+### Authentication
+
+You can authenticate with BillingPlatform using either a username/password or OAuth client credentials.
+
+#### 1. Username and Password
 
 ```python
-BillingPlatform(
-    base_url: str,
-    username: str = None,
-    password: str = None,
-    client_id: str = None,
-    client_secret: str = None,
-    token_type: str = 'access_token',
-    requests_parameters: dict = None,
-    auth_api_version: str = '1.0',
-    rest_api_version: str = '2.0',
-    logout_at_exit: bool = True
+from billingplatform import BillingPlatform
+
+bp = BillingPlatform(
+    base_url="https://sandbox.billingplatform.com/myorg",
+    username="your_username",
+    password="your_password"
 )
 ```
 
-- **base_url**: Base URL of the BillingPlatform API.
-- **username/password**: Credentials for session authentication.
-- **client_id/client_secret/token_type**: Credentials for OAuth authentication (not yet implemented).
-- **requests_parameters**: Additional parameters for each request (e.g., proxies, timeouts).
-- **auth_api_version/rest_api_version**: API versioning.
-- **logout_at_exit**: If `True`, logs out automatically on exit.
+#### 2. OAuth Client Credentials
 
-Raises `ValueError` if neither authentication method is provided.
+```python
+from billingplatform import BillingPlatform
 
----
+bp = BillingPlatform(
+    base_url="https://sandbox.billingplatform.com/myorg",
+    client_id="your_client_id",
+    client_secret="your_client_secret",
+    use_token="access_token"  # or "refresh_token"
+)
+```
 
-### Methods
-
-#### `login()`
-Authenticate using username and password. Registers automatic logout if enabled.
-
-#### `oauth_login()`
-Authenticate using OAuth. *(Not implemented yet.)*
-
-#### `logout()`
-Logs out of the API and closes the session.
-
-#### `query(sql: str) -> dict`
-Executes a SQL query against the API.
-
-- **sql**: SQL query string.
-- **Returns**: Query response data.
-
-#### `retrieve_by_id(entity: str, record_id: int) -> dict`
-Retrieves a single record by entity and ID.
-
-- **entity**: Entity name (e.g., "ACCOUNT").
-- **record_id**: Record ID.
-
-#### `retrieve_by_query(entity: str, queryAnsiSql: str) -> dict`
-Retrieves records using an ANSI SQL query.
-
-- **entity**: Entity name.
-- **queryAnsiSql**: SQL filter.
-
-#### `create(entity: str, data: list[dict] | dict) -> dict`
-Creates new records.
-
-- **entity**: Entity name.
-- **data**: Record data (dict or list of dicts).
-
-#### `update(entity: str, data: list[dict] | dict) -> dict`
-Updates existing records.
-
-- **entity**: Entity name.
-- **data**: Record data.
-
-#### `upsert(entity: str, data: list[dict] | dict, externalIDFieldName: str) -> dict`
-Creates or updates records based on an external ID.
-
-- **entity**: Entity name.
-- **data**: Record data.
-- **externalIDFieldName**: Field name for upsert matching.
-
-#### `delete(entity: str, data: list[dict] | dict) -> dict`
-Deletes records.
-
-- **entity**: Entity name.
-- **data**: Record data.
-
-#### Not Implemented
-- `undelete()`
-- `bulk_request()`
-- `bulk_retreive()`
-- `file_upload(file_path: str)`
-- `file_download(file_id: str)`
+> **Tip:** Never hardcode credentials in production code. Use environment variables or a secure credentials file.
 
 ---
 
-## Error Handling
+## Next Steps
 
-All non-200 responses are handled by [`response_handler`](src/billingplatform/handlers.py), which raises custom exceptions defined in [`exceptions.py`](src/billingplatform/exceptions.py):
+Once authenticated, you can use the following methods. See the linked documentation for details and examples:
 
-- `BillingPlatform400Exception`
-- `BillingPlatform401Exception`
-- `BillingPlatform404Exception`
-- `BillingPlatform429Exception`
-- `BillingPlatform500Exception`
-- `BillingPlatformException` (generic)
+- [Query Records](query.md)
+- [Retrieve by ID](retrieve_by_id.md)
+- [Retrieve by Query](retrieve_by_query.md)
+- [Create Records](create.md)
+- [Update Records](update.md)
+- [Upsert Records](upsert.md)
+- [Delete Records](delete.md)
+- [Undelete Records](undelete.md)
+- [Bulk Query Request](bulk_query_request.md)
+- [Bulk Retrieve Request](bulk_retrieve_request.md)
+- [Logout](logout.md)
 
 ---
 
 ## Example Usage
 
 ```python
-from billingplatform import BillingPlatform
-
-bp = BillingPlatform(base_url="https://sandbox.billingplatform.com/myorg", username="myuser", password="mypassword")
-response = bp.query("SELECT Id, Name FROM ACCOUNT WHERE Status = 'ACTIVE'")
-print(response)
+# Example: Query active accounts
+response = bp.query("SELECT Id, Name, Status FROM ACCOUNT WHERE Status = 'ACTIVE'")
+accounts = response.get("queryResponse", [])
+for account in accounts:
+    print(account)
 ```
 
 ---
 
-For more details, see the [source code](../src/billingplatform/api.py).
+For more details, see the [API source code](../src/billingplatform/api.py) or browse the [tests](../tests/README.md) for practical examples.
