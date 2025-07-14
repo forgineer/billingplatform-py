@@ -1,4 +1,5 @@
 import atexit
+import base64
 import logging
 import requests
 
@@ -14,10 +15,10 @@ class BillingPlatform:
                  password: str = None, 
                  client_id: str = None, 
                  client_secret: str = None,
-                 token_type: str = 'access_token', # access_token or refresh_token
+                 use_token: Literal['access_token', 'refresh_token'] = 'access_token',
                  requests_parameters: dict = None,
-                 auth_api_version: str = '1.0', # /auth endpoint
-                 rest_api_version: str = '2.0', # /rest endpoint
+                 auth_api_version: str = '1.0', # /auth endpoint version
+                 rest_api_version: str = '2.0', # /rest endpoint version
                  logout_at_exit: bool = True
                 ):
         """
@@ -28,7 +29,7 @@ class BillingPlatform:
         :param password: Password for authentication (optional if using OAuth).
         :param client_id: Client ID for OAuth authentication (optional if using username/password).
         :param client_secret: Client secret for OAuth authentication (optional if using username/password).
-        :param token_type: Type of token to use for OAuth ('access_token' or 'refresh_token').
+        :param use_token: Type of token to use for OAuth ('access_token' or 'refresh_token').
         :param requests_parameters: Additional parameters to pass to each request made by the client (optional).
         :param auth_api_version: Version of the authentication API (default is '1.0').
         :param rest_api_version: Version of the REST API (default is '2.0').
@@ -41,6 +42,8 @@ class BillingPlatform:
         self.password: str = password
         self.client_id: str = client_id
         self.client_secret: str = client_secret
+        self.use_token: str = use_token
+        self.token: str | None = None
         self.requests_parameters: dict = requests_parameters or {}
         self.auth_api_version: str = auth_api_version
         self.rest_api_version: str = rest_api_version
@@ -52,10 +55,10 @@ class BillingPlatform:
         self.rest_base_url: str = f'{self.base_url}/rest/{self.rest_api_version}'
 
 
-        if all([username, password]):
-            self.login()
-        elif all([client_id, client_secret, token_type]):
-            self.oauth_login()
+        if all([self.username, self.password]):
+            self._login()
+        elif all([self.client_id, self.client_secret, self.use_token]):
+            self._oauth_login()
         else:
             raise ValueError("Either username/password or client_id/client_secret must be provided.")
 
@@ -85,7 +88,7 @@ class BillingPlatform:
             raise exceptions.BillingPlatformException(response)
 
 
-    def login(self) -> None:
+    def _login(self) -> None:
         """
         Authenticate with the BillingPlatform API using username and password.
 
@@ -97,6 +100,7 @@ class BillingPlatform:
             logging.warning('Automatic logout at exit has been disabled. You must call logout() manually to close the session.')
         
         _login_url: str = f'{self.rest_base_url}/login'
+        logging.debug(f'Login URL: {_login_url}')
         
         # Update session headers
         _login_payload: dict = {
@@ -123,18 +127,31 @@ class BillingPlatform:
             raise Exception(f'Failed to login: {e}')
     
 
-    def oauth_login(self) -> None:
+    def _oauth_login(self) -> None:
         """
         Authenticate with the BillingPlatform API using OAuth and return an access token.
         """
-        raise NotImplementedError("OAuth login functionality is not implemented yet.")
+        _authenticate_url: str = f'{self.auth_base_url}/authenticate?grant_type=client_credentials'
+        logging.debug(f'Authenticate URL: {_authenticate_url}')
 
+        # Encode client credentials into base64
+        _base64_credentials: str = base64.b64encode(f'{self.client_id}:{self.client_secret}'.encode('utf-8')).decode('utf-8')
 
-    def oauth_token(self, refresh_token: str) -> None:
-        """
-        Authenticate with the BillingPlatform API using OAuth and return an access token.
-        """
-        raise NotImplementedError("OAuth login functionality is not implemented yet.")
+        self.session.headers.update({'Authorization': f'Basic {_base64_credentials}'})
+
+        try:
+            _oauth_response: requests.Response = self._response_handler(
+                self.session.post(_authenticate_url, **self.requests_parameters)
+            )
+
+            # Update session headers with the token
+            if self.use_token in _oauth_response:
+                self.token = _oauth_response[self.use_token]
+                self.session.headers.update({'Authorization': f'Bearer {self.token}'})
+            else:
+                raise exceptions.BillingPlatformException(f'OAuth response did not contain {self.use_token}. Ensure BillingPlatform is configured correctly.')
+        except requests.RequestException as e:
+            raise Exception(f'Failed to authenticate with OAuth: {e}')
 
 
     def logout(self) -> None:
@@ -144,14 +161,16 @@ class BillingPlatform:
         :return: None
         """
         try:
-            if self.session.headers.get('sessionid'):
+            if self.session.headers.get('sessionid', False):
                 _logout_url: str = f'{self.rest_base_url}/logout'
+                logging.debug(f'Logout URL: {_logout_url}')
 
                 _logout_response: dict = self._response_handler(
                     self.session.post(_logout_url, **self.requests_parameters)
                 )
-
                 # If the logout is successful, we don't need to do anything further except close the session.
+            else:
+                logging.warning('No session ID found. Skipping logout.')
 
             # Close the session
             self.session.close()
@@ -159,7 +178,8 @@ class BillingPlatform:
             raise Exception(f"Failed to logout: {e}")
 
 
-    def query(self, sql: str) -> dict:
+    def query(self, 
+              sql: str) -> dict:
         """
         Execute a SQL query against the BillingPlatform API.
 
@@ -168,7 +188,6 @@ class BillingPlatform:
         """
         _url_encoded_sql: str = quote(sql)
         _query_url: str = f'{self.rest_base_url}/query?sql={_url_encoded_sql}'
-
         logging.debug(f'Query URL: {_query_url}')
 
         try:
@@ -192,7 +211,6 @@ class BillingPlatform:
         :return: The retrieve response data.
         """
         _retrieve_url: str = f'{self.rest_base_url}/{entity}/{record_id}'
-        
         logging.debug(f'Retrieve URL: {_retrieve_url}')
 
         try:
@@ -217,7 +235,6 @@ class BillingPlatform:
         """
         _url_encoded_sql: str = quote(queryAnsiSql)
         _retrieve_url: str = f'{self.rest_base_url}/{entity}?queryAnsiSql={_url_encoded_sql}'
-        
         logging.debug(f'Retrieve URL: {_retrieve_url}')
 
         try:
@@ -417,6 +434,7 @@ class BillingPlatform:
         :param RequestName: Descriptive name of the new request.
         :param RequestBody: The request payload created using the BillingPlatform Query Language. The payload length cannot exceed 4000 characters.
         :param RequestsPerBatch: Number of records returned in one batch (default is 10000).
+        :param ResponseFormat: The format of the response (default is 'JSON').
         :return: A response containing the ID of the request being processed.
         """
         _bulk_query_url: str = f'{self.rest_base_url}/bulk_api_request'
@@ -494,11 +512,3 @@ class BillingPlatform:
             return _bulk_retrieve_response
         except requests.RequestException as e:
             raise Exception(f'Failed to post bulk retrieve request: {e}')
-
-
-    def file_upload(self, file_path: str):
-        raise NotImplementedError("File upload functionality is not implemented yet.")
-
-
-    def file_download(self, file_id: str):
-        raise NotImplementedError("File download functionality is not implemented yet.")

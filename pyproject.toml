@@ -1,6 +1,6 @@
 [project]
 name='billingplatform'
-version='0.1.9'
+version='0.2.0'
 authors = [
     {name = 'forgineer', email = 'blake.phillips86@gmail.com'},
 ]
@@ -18,7 +18,7 @@ keywords = [
     'revenue management',
 ]
 classifiers = [
-    'Development Status :: 1 - Planning',
+    'Development Status :: 3 - Alpha',
     'Operating System :: OS Independent',
     'Intended Audience :: Developers',
     'Topic :: Office/Business :: Financial',
@@ -36,17 +36,18 @@ Issues = 'https://github.com/forgineer/billingplatform-py/issues'
 
 
 [project.optional-dependencies]
-# pip install -e .[testing]
-testing = [
-    'flask',
-    'pandas'
+# pip install -e .[mock_server]
+# For running the mock server for testing
+mock_server = [
+    'flask'
 ]
-# pip install -e .[deploy]
-deploy = [
+# pip install -e .[pypi_deploy]
+# For building and deploying to PyPI (forgineer):
+deploy_tools = [
     'build',
     'twine'
 ]
-# Steps for building and deploying to pypi:
+# Steps for building and deploying to PyPI:
 # - python -m build
 # - twine check dist/*
 # - twine upload -r testpypi dist/*
