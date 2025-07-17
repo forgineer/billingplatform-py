@@ -73,6 +73,34 @@ for account in accounts:
     print(account)
 ```
 
+## Converting API Responses to a DataFrame
+
+You can easily convert BillingPlatform API responses to a DataFrame for additional transformation or analysis.  
+Most responses contain a single key (such as `"queryResponse"` or `"retrieveResponse"`) with a list of records.
+
+Here's an example with a reusable function where the data is extracting and converted to a pandas DataFrame:
+
+```python
+import pandas as pd
+
+def response_to_dataframe(response: dict) -> pd.DataFrame:
+    """
+    Converts a BillingPlatform API response to a pandas DataFrame.
+    Automatically detects the main response key.
+    """
+    # Find the first key with a list value
+    for value in response.values():
+        if isinstance(value, list):
+            return pd.DataFrame(value)
+    # If no list found, return empty DataFrame
+    return pd.DataFrame()
+
+# Usage example:
+response = bp.query("SELECT Id, Name, Status FROM ACCOUNT WHERE Status = 'ACTIVE'")
+df = response_to_dataframe(response)
+print(df)
+```
+
 ---
 
 For more details, see the [API source code](../src/billingplatform/api.py) or browse the [tests](../tests/README.md) for practical examples.
