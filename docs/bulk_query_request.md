@@ -1,8 +1,8 @@
+[← Back to Documentation Home](README.md)
+
 # `BillingPlatform.bulk_query_request`
 
 Submit a bulk query request to BillingPlatform for large data retrieval operations.
-
----
 
 ## Syntax
 
@@ -15,8 +15,6 @@ BillingPlatform.bulk_query_request(
 ) -> dict
 ```
 
----
-
 ## Parameters
 
 | Parameter         | Type      | Description                                                                 |
@@ -26,15 +24,12 @@ BillingPlatform.bulk_query_request(
 | `RequestsPerBatch`| `int`     | Number of records to process per batch (default: 10,000).                   |
 | `ResponseFormat`  | `Literal` | Format of the response data, either `"CSV"` or `"JSON"` (default: `"JSON"`).|
 
----
 
 ## Returns
 
 | Type   | Description |
 |--------|-------------|
 | `dict` | The response data from BillingPlatform. Bulk query results are typically found under the `"bulkQueryResponse"` key. |
-
----
 
 ## Examples
 
@@ -61,8 +56,6 @@ response = bp.bulk_query_request(
 bulk_results = response.get("bulkQueryResponse", [])
 print(bulk_results)
 ```
-
----
 
 ## Notes
 

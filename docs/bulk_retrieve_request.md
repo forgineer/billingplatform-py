@@ -1,8 +1,8 @@
+[← Back to Documentation Home](README.md)]
+
 # `BillingPlatform.bulk_retrieve_request`
 
 Submit a bulk retrieve request to BillingPlatform for large-scale record retrieval.
-
----
 
 ## Syntax
 
@@ -19,8 +19,6 @@ BillingPlatform.bulk_retrieve_request(
 ) -> dict
 ```
 
----
-
 ## Parameters
 
 | Parameter           | Type                | Description                                                                 |
@@ -34,15 +32,11 @@ BillingPlatform.bulk_retrieve_request(
 | `CSVQualifier`      | `str`               | Qualifier character for CSV output (default: `"`).                          |
 | `CSVEndLineFormat`  | `Literal`           | End-of-line format for CSV output: `"CR"`, `"LF"`, or `"CRLF"` (default: `"CRLF"`). |
 
----
-
 ## Returns
 
 | Type   | Description |
 |--------|-------------|
 | `dict` | The response data from BillingPlatform. Bulk retrieve results are typically found under the `"bulkRetrieveResponse"` key. |
-
----
 
 ## Examples
 
@@ -71,8 +65,6 @@ response = bp.bulk_retrieve_request(
 bulk_records = response.get("bulkRetrieveResponse", [])
 print(bulk_records)
 ```
-
----
 
 ## Notes
 

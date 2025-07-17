@@ -1,16 +1,14 @@
+[← Back to Documentation Home](README.md)
+
 # `BillingPlatform.retrieve_by_query`
 
 Retrieve records from BillingPlatform using an ANSI SQL query filter.
-
----
 
 ## Syntax
 
 ```python
 BillingPlatform.retrieve_by_query(entity: str, queryAnsiSql: str) -> dict
 ```
-
----
 
 ## Parameters
 
@@ -19,15 +17,11 @@ BillingPlatform.retrieve_by_query(entity: str, queryAnsiSql: str) -> dict
 | `entity`       | `str`  | The name of the entity to query (e.g., `"ACCOUNT"`).               |
 | `queryAnsiSql` | `str`  | The ANSI SQL query string to filter records.                       |
 
----
-
 ## Returns
 
 | Type   | Description |
 |--------|-------------|
 | `dict` | The response data from BillingPlatform. The main results are typically found under the `"retrieveResponse"` key. |
-
----
 
 ## Examples
 
@@ -47,8 +41,6 @@ records = response.get("retrieveResponse", [])
 for record in records:
     print(record)
 ```
-
----
 
 ## Notes
 

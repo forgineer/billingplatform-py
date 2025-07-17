@@ -1,16 +1,14 @@
+[← Back to Documentation Home](README.md)
+
 # `BillingPlatform.upsert`
 
 Create or update records in BillingPlatform for a specified entity, using an external ID field to determine uniqueness.
-
----
 
 ## Syntax
 
 ```python
 BillingPlatform.upsert(entity: str, data: list[dict] | dict, externalIDFieldName: str) -> dict
 ```
-
----
 
 ## Parameters
 
@@ -20,15 +18,11 @@ BillingPlatform.upsert(entity: str, data: list[dict] | dict, externalIDFieldName
 | `data`               | `dict` or `list` | The record data to upsert. Can be a single dict or a list of dicts.         |
 | `externalIDFieldName`| `str`            | The field name used to match records for upsert operations.                 |
 
----
-
 ## Returns
 
 | Type   | Description |
 |--------|-------------|
 | `dict` | The response data from BillingPlatform. The upserted records are typically found under the `"upsertResponse"` key. |
-
----
 
 ## Examples
 
@@ -54,8 +48,6 @@ upserted = response.get("upsertResponse", [])
 print(upserted)
 ```
 
----
-
 ### Upserting Multiple Records
 
 ```python
@@ -67,8 +59,6 @@ accounts = [
 response = bp.upsert(entity="ACCOUNT", data=accounts, externalIDFieldName="ExternalId")
 upserted_accounts = response.get("upsertResponse", [])
 ```
-
----
 
 ## Notes
 

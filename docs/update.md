@@ -1,16 +1,14 @@
+[← Back to Documentation Home](README.md)
+
 # `BillingPlatform.update`
 
 Update existing records in BillingPlatform for a specified entity.
-
----
 
 ## Syntax
 
 ```python
 BillingPlatform.update(entity: str, data: list[dict] | dict) -> dict
 ```
-
----
 
 ## Parameters
 
@@ -19,15 +17,11 @@ BillingPlatform.update(entity: str, data: list[dict] | dict) -> dict
 | `entity`  | `str`            | The name of the entity to update records for (e.g., `"ACCOUNT"`).|
 | `data`    | `dict` or `list` | The record data to update. Can be a single dict or a list of dicts.|
 
----
-
 ## Returns
 
 | Type   | Description |
 |--------|-------------|
 | `dict` | The response data from BillingPlatform. The updated records are typically found under the `"updateResponse"` key. |
-
----
 
 ## Examples
 
@@ -53,8 +47,6 @@ updated = response.get("updateResponse", [])
 print(updated)
 ```
 
----
-
 ### Updating Multiple Records
 
 ```python
@@ -66,8 +58,6 @@ accounts = [
 response = bp.update(entity="ACCOUNT", data=accounts)
 updated_accounts = response.get("updateResponse", [])
 ```
-
----
 
 ## Notes
 

@@ -1,8 +1,8 @@
+[← Back to Documentation Home](README.md)
+
 # `BillingPlatform.logout`
 
 Log out of the BillingPlatform API and close the current session.
-
----
 
 ## Syntax
 
@@ -10,21 +10,15 @@ Log out of the BillingPlatform API and close the current session.
 BillingPlatform.logout() -> None
 ```
 
----
-
 ## Parameters
 
 This method does not take any parameters.
-
----
 
 ## Returns
 
 | Type   | Description |
 |--------|-------------|
 | `None` | This method does not return a value. It closes the session and logs out from BillingPlatform. |
-
----
 
 ## Examples
 
@@ -43,8 +37,6 @@ bp = BillingPlatform(
 
 bp.logout()  # Log out and close the session
 ```
-
----
 
 ## Notes
 

@@ -41,7 +41,7 @@ Issues = 'https://github.com/forgineer/billingplatform-py/issues'
 mock_server = [
     'flask'
 ]
-# pip install -e .[pypi_deploy]
+# pip install -e .[deploy_tools]
 # For building and deploying to PyPI (forgineer):
 deploy_tools = [
     'build',

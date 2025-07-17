@@ -1,8 +1,8 @@
+[← Back to Documentation Home](README.md)
+
 # `BillingPlatform.query`
 
 Query records from BillingPlatform using an ANSI SQL statement.
-
----
 
 ## Syntax
 
@@ -10,23 +10,17 @@ Query records from BillingPlatform using an ANSI SQL statement.
 BillingPlatform.query(sql: str) -> dict
 ```
 
----
-
 ## Parameters
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `sql`     | `str` | The ANSI SQL query string to execute against the BillingPlatform API. |
 
----
-
 ## Returns
 
 | Type   | Description |
 |--------|-------------|
 | `dict` | The response data from BillingPlatform. The main results are typically found under the `"queryResponse"` key. |
-
----
 
 ## Examples
 
@@ -47,17 +41,13 @@ for account in accounts:
     print(account)
 ```
 
----
-
 ### Filtering Results
 
 ```python
-sql = "SELECT Id, Name FROM ACCOUNT WHERE Status = 'INACTIVE'"
+sql = "SELECT Id, Name FROM ACCOUNT WHERE Status = 'ACTIVE'"
 response = bp.query(sql)
-inactive_accounts = response.get("queryResponse", [])
+active_accounts = response.get("queryResponse", [])
 ```
-
----
 
 ## Notes
 

@@ -1,16 +1,14 @@
+[← Back to Documentation Home](README.md)]
+
 # `BillingPlatform.delete`
 
 Delete records in BillingPlatform for a specified entity.
-
----
 
 ## Syntax
 
 ```python
 BillingPlatform.delete(entity: str, data: list[dict] | dict, EmptyRecycleBin: bool = False) -> dict
 ```
-
----
 
 ## Parameters
 
@@ -20,15 +18,11 @@ BillingPlatform.delete(entity: str, data: list[dict] | dict, EmptyRecycleBin: bo
 | `data`            | `dict` or `list` | The record data to delete. Can be a single dict or a list of dicts.         |
 | `EmptyRecycleBin` | `bool`           | If `True`, permanently deletes records instead of moving them to recycle bin.|
 
----
-
 ## Returns
 
 | Type   | Description |
 |--------|-------------|
 | `dict` | The response data from BillingPlatform. The deleted records are typically found under the `"deleteResponse"` key. |
-
----
 
 ## Examples
 
@@ -52,8 +46,6 @@ deleted = response.get("deleteResponse", [])
 print(deleted)
 ```
 
----
-
 ### Deleting Multiple Records and Emptying Recycle Bin
 
 ```python
@@ -65,8 +57,6 @@ accounts = [
 response = bp.delete(entity="ACCOUNT", data=accounts, EmptyRecycleBin=True)
 deleted_accounts = response.get("deleteResponse", [])
 ```
-
----
 
 ## Notes
 

@@ -11,12 +11,12 @@ from urllib.parse import quote # for URL encoding
 class BillingPlatform:
     def __init__(self, 
                  base_url: str,
-                 username: str = None, 
-                 password: str = None, 
-                 client_id: str = None, 
-                 client_secret: str = None,
+                 username: str | None = None, 
+                 password: str | None = None, 
+                 client_id: str | None = None, 
+                 client_secret: str | None = None,
                  use_token: Literal['access_token', 'refresh_token'] = 'access_token',
-                 requests_parameters: dict = None,
+                 requests_parameters: dict | None = None,
                  auth_api_version: str = '1.0', # /auth endpoint version
                  rest_api_version: str = '2.0', # /rest endpoint version
                  logout_at_exit: bool = True
@@ -24,7 +24,7 @@ class BillingPlatform:
         """
         Initialize the BillingPlatform API client.
 
-        :param base_url: The base URL of the BillingPlatform API.
+        :param base_url: The base URL of the BillingPlatform API (ex. https://sandbox.billingplatform.com/myorg).
         :param username: Username for authentication (optional if using OAuth).
         :param password: Password for authentication (optional if using OAuth).
         :param client_id: Client ID for OAuth authentication (optional if using username/password).
@@ -33,16 +33,16 @@ class BillingPlatform:
         :param requests_parameters: Additional parameters to pass to each request made by the client (optional).
         :param auth_api_version: Version of the authentication API (default is '1.0').
         :param rest_api_version: Version of the REST API (default is '2.0').
-        :param logout_at_exit: Whether to log out automatically at exit (default is True).        
+        :param logout_at_exit: Whether to log out of the session automatically at exit (default is True).        
         :raises ValueError: If neither username/password nor client_id/client_secret is provided.
         :raises BillingPlatformException: If login fails or response does not contain expected data.
         """
         self.base_url: str = base_url.rstrip('/')
-        self.username: str = username
-        self.password: str = password
-        self.client_id: str = client_id
-        self.client_secret: str = client_secret
-        self.use_token: str = use_token
+        self.username: str | None = username
+        self.password: str | None = password
+        self.client_id: str | None = client_id
+        self.client_secret: str | None = client_secret
+        self.use_token: str | None = use_token
         self.token: str | None = None
         self.requests_parameters: dict = requests_parameters or {}
         self.auth_api_version: str = auth_api_version
@@ -55,6 +55,7 @@ class BillingPlatform:
         self.rest_base_url: str = f'{self.base_url}/rest/{self.rest_api_version}'
 
 
+         # Authenticate based on provided credentials
         if all([self.username, self.password]):
             self._login()
         elif all([self.client_id, self.client_secret, self.use_token]):
@@ -67,7 +68,7 @@ class BillingPlatform:
         """
         Handle the response from the BillingPlatform API.
 
-        :param response: The response object from the requests library.
+        :param response: The response object returned from the request.
         :return: The response data as a dictionary.
         :raises BillingPlatformException: If the response status code is not 200.
         """
@@ -90,9 +91,10 @@ class BillingPlatform:
 
     def _login(self) -> None:
         """
-        Authenticate with the BillingPlatform API using username and password.
+        Authenticate with the BillingPlatform API using username and password. If successful, updates the session headers with the session ID.
 
         :return: None
+        :raises Exception: If the login response does not contain a session ID.
         """
         if self.logout_at_exit:
             atexit.register(self.logout)
@@ -129,7 +131,11 @@ class BillingPlatform:
 
     def _oauth_login(self) -> None:
         """
-        Authenticate with the BillingPlatform API using OAuth and return an access token.
+        Authenticate with the BillingPlatform API using OAuth and return an access and/or refresh token. if successful, updates the session headers with the authorization token.
+
+        :return: None
+        :raises BillingPlatformException: If the OAuth response does not contain the expected token.
+        :raises Exception: If the authentication request fails.
         """
         _authenticate_url: str = f'{self.auth_base_url}/authenticate?grant_type=client_credentials'
         logging.debug(f'Authenticate URL: {_authenticate_url}')
@@ -149,16 +155,17 @@ class BillingPlatform:
                 self.token = _oauth_response[self.use_token]
                 self.session.headers.update({'Authorization': f'Bearer {self.token}'})
             else:
-                raise exceptions.BillingPlatformException(f'OAuth response did not contain {self.use_token}. Ensure BillingPlatform is configured correctly.')
+                raise exceptions.BillingPlatformException(f'OAuth response did not contain {self.use_token}. Ensure BillingPlatform is configured correctly to accept OAuth.')
         except requests.RequestException as e:
             raise Exception(f'Failed to authenticate with OAuth: {e}')
 
 
     def logout(self) -> None:
         """
-        Log out of the BillingPlatform API.
+        Log out of the BillingPlatform session. This should be called to close the session and clean up resources.
 
         :return: None
+        :raises Exception: If the logout request fails.
         """
         try:
             if self.session.headers.get('sessionid', False):
@@ -183,8 +190,9 @@ class BillingPlatform:
         """
         Execute a SQL query against the BillingPlatform API.
 
-        :param sql: The SQL query to execute.
+        :param sql: The SQL query to execute. It should be a valid SQL statement that the BillingPlatform API can process.
         :return: The query response data.
+        :raises Exception: If the query request fails.
         """
         _url_encoded_sql: str = quote(sql)
         _query_url: str = f'{self.rest_base_url}/query?sql={_url_encoded_sql}'
@@ -209,6 +217,7 @@ class BillingPlatform:
         :param entity: The entity to retrieve records from.
         :param record_id: The 'Id' of the record to retrieve.
         :return: The retrieve response data.
+        :raises Exception: If the retrieve request fails.
         """
         _retrieve_url: str = f'{self.rest_base_url}/{entity}/{record_id}'
         logging.debug(f'Retrieve URL: {_retrieve_url}')
@@ -232,6 +241,7 @@ class BillingPlatform:
         :param entity: The entity to retrieve records from.
         :param queryAnsiSql: Optional ANSI SQL query to filter records.
         :return: The retrieve response data.
+        :raises Exception: If the retrieve request fails.
         """
         _url_encoded_sql: str = quote(queryAnsiSql)
         _retrieve_url: str = f'{self.rest_base_url}/{entity}?queryAnsiSql={_url_encoded_sql}'
@@ -252,16 +262,17 @@ class BillingPlatform:
                entity: str, 
                data: list[dict] | dict) -> dict:
         """        
-        Create records in BillingPlatform.
+        Create records in BillingPlatform. Please review the BillingPlatform API documentation for limits on the number of records that can be created in a single request.
 
         :param entity: The entity to create a record for.
         :param data: The data to create the record with.
-        :return: The create response data.
+        :return: The create response data. This will contain the ID of the newly created record(s).
+        :raises Exception: If the create request fails.
         """
         _create_url: str = f'{self.rest_base_url}/{entity}'
         logging.debug(f'Create URL: {_create_url}')
 
-        _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
+        _data: dict = data.copy() 
 
         if not isinstance(_data, dict) or 'brmObjects' not in _data:
             _data = {
@@ -289,12 +300,13 @@ class BillingPlatform:
 
         :param entity: The entity to update records for.
         :param data: The data to update the records with.
-        :return: The update response data.
+        :return: The update response data. This will contain the ID of the updated record(s) or error messages upon failure.
+        :raises Exception: If the update request fails.
         """
         _update_url: str = f'{self.rest_base_url}/{entity}'
         logging.debug(f'Update URL: {_update_url}')
 
-        _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
+        _data: dict = data.copy()
 
         if not isinstance(_data, dict) or 'brmObjects' not in _data:
             _data = {
@@ -319,17 +331,18 @@ class BillingPlatform:
                data: list[dict] | dict,
                externalIDFieldName: str) -> dict:
         """
-        Upsert records in BillingPlatform.
+        Upsert records in BillingPlatform. If the record exists, it will be updated; if not, it will be created.
 
         :param entity: The entity to upsert records for.
         :param data: The data to upsert the records with.
         :param externalIDFieldName: The name of the external ID field to use for upsert.
         :return: The upsert response data.
+        :raises Exception: If the upsert request fails.
         """
         _upsert_url: str = f'{self.rest_base_url}/{entity}'
         logging.debug(f'Upsert URL: {_upsert_url}')
 
-        _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
+        _data: dict = data.copy()
 
         if not isinstance(_data, dict) or 'brmObjects' not in _data:
             _data = {
@@ -360,14 +373,15 @@ class BillingPlatform:
         Delete records from BillingPlatform.
 
         :param entity: The entity to delete a record from.
-        :param data: The data to delete the record with.
+        :param data: The data to delete the record with. This should only contain the IDs of the records to be deleted.
         :param EmptyRecycleBin: Whether to permanently delete the record (default is False).
         :return: The delete response data.
+        :raises Exception: If the delete request fails.
         """
         _delete_url: str = f'{self.rest_base_url}/delete/{entity}'
         logging.debug(f'Delete URL: {_delete_url}')
 
-        _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
+        _data: dict = data.copy()
         _EmptyRecycleBin: str = '0' if not EmptyRecycleBin else '1'
 
         if not isinstance(_data, dict) or 'brmObjects' not in _data:
@@ -395,16 +409,17 @@ class BillingPlatform:
                  entity: str, 
                  data: list[dict] | dict) -> dict:
         """
-        Undelete records in BillingPlatform.
+        Undelete records from the recycle bin in BillingPlatform.
 
         :param entity: The entity to undelete records for.
-        :param data: The data to undelete the records with.
+        :param data: The data to undelete the records with. This should only contain the IDs of the records to be undeleted.
         :return: The undelete response data.
+        :raises Exception: If the undelete request fails.
         """
         _undelete_url: str = f'{self.rest_base_url}/undelete/{entity}'
         logging.debug(f'Undelete URL: {_undelete_url}')
 
-        _data: dict = data.copy()  # Create a copy of the data to avoid modifying the original
+        _data: dict = data.copy()
 
         if not isinstance(_data, dict) or 'brmObjects' not in _data:
             _data = {
@@ -429,13 +444,15 @@ class BillingPlatform:
                            RequestsPerBatch: int = 10000,
                            ResponseFormat: Literal['CSV', 'JSON'] = "JSON") -> dict:
         """
-        Perform a bulk query request to the BillingPlatform API.
+        Make a bulk query request to the BillingPlatform API. The request will be processed asynchronously, and you can check the status 
+        of the request within the BillingPlatform UI.
 
         :param RequestName: Descriptive name of the new request.
         :param RequestBody: The request payload created using the BillingPlatform Query Language. The payload length cannot exceed 4000 characters.
         :param RequestsPerBatch: Number of records returned in one batch (default is 10000).
         :param ResponseFormat: The format of the response (default is 'JSON').
         :return: A response containing the ID of the request being processed.
+        :raises Exception: If the query request fails.
         """
         _bulk_query_url: str = f'{self.rest_base_url}/bulk_api_request'
         logging.debug(f'Bulk query request URL: {_bulk_query_url}')
@@ -472,7 +489,8 @@ class BillingPlatform:
                               CSVQualifier: str = '\"',
                               CSVEndLineFormat: Literal['CR', 'LF', 'CRLF'] = "CRLF") -> dict:
         """
-        Perform a bulk retrieve request to the BillingPlatform API.
+        Perform a bulk retrieve request to the BillingPlatform API. The request will be processed asynchronously, and you can check the status 
+        of the request within the BillingPlatform UI.
 
         :param RequestName: Descriptive name of the new request.
         :param RequestBody: The request payload created using a standard ANSI SQL query.
@@ -483,6 +501,7 @@ class BillingPlatform:
         :param CSVQualifier: Qualifier for CSV format (default is '\"').
         :param CSVEndLineFormat: End line format for CSV (default is 'CRLF').
         :return: A response containing the ID of the request being processed.
+        :raises Exception: If the retrieve request fails.
         """
         _bulk_query_url: str = f'{self.rest_base_url}/bulk_api_request'
         logging.debug(f'Bulk retrieve request URL: {_bulk_query_url}')

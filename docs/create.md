@@ -1,16 +1,14 @@
+[← Back to Documentation Home](README.md)]
+
 # `BillingPlatform.create`
 
 Create new records in BillingPlatform for a specified entity.
-
----
 
 ## Syntax
 
 ```python
 BillingPlatform.create(entity: str, data: list[dict] | dict) -> dict
 ```
-
----
 
 ## Parameters
 
@@ -19,15 +17,11 @@ BillingPlatform.create(entity: str, data: list[dict] | dict) -> dict
 | `entity`  | `str`            | The name of the entity to create records for (e.g., `"ACCOUNT"`).|
 | `data`    | `dict` or `list` | The record data to create. Can be a single dict or a list of dicts.|
 
----
-
 ## Returns
 
 | Type   | Description |
 |--------|-------------|
 | `dict` | The response data from BillingPlatform. The created records are typically found under the `"createResponse"` key. |
-
----
 
 ## Examples
 
@@ -52,8 +46,6 @@ created = response.get("createResponse", [])
 print(created)
 ```
 
----
-
 ### Creating Multiple Records
 
 ```python
@@ -65,8 +57,6 @@ accounts = [
 response = bp.create(entity="ACCOUNT", data=accounts)
 created_accounts = response.get("createResponse", [])
 ```
-
----
 
 ## Notes
 

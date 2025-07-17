@@ -1,16 +1,14 @@
+[← Back to Documentation Home](README.md)
+
 # `BillingPlatform.undelete`
 
 Restore (undelete) records in BillingPlatform for a specified entity.
-
----
 
 ## Syntax
 
 ```python
 BillingPlatform.undelete(entity: str, data: list[dict] | dict) -> dict
 ```
-
----
 
 ## Parameters
 
@@ -19,15 +17,11 @@ BillingPlatform.undelete(entity: str, data: list[dict] | dict) -> dict
 | `entity`  | `str`            | The name of the entity to restore records for (e.g., `"ACCOUNT"`).|
 | `data`    | `dict` or `list` | The record data to restore. Can be a single dict or a list of dicts.|
 
----
-
 ## Returns
 
 | Type   | Description |
 |--------|-------------|
 | `dict` | The response data from BillingPlatform. The restored records are typically found under the `"undeleteResponse"` key. |
-
----
 
 ## Examples
 
@@ -51,8 +45,6 @@ restored = response.get("undeleteResponse", [])
 print(restored)
 ```
 
----
-
 ### Restoring Multiple Records
 
 ```python
@@ -64,8 +56,6 @@ accounts = [
 response = bp.undelete(entity="ACCOUNT", data=accounts)
 restored_accounts = response.get("undeleteResponse", [])
 ```
-
----
 
 ## Notes
 
