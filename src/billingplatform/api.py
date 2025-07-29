@@ -4,7 +4,7 @@ import logging
 import requests
 
 from . import exceptions
-from typing import Literal
+from typing import Iterator, Literal
 from urllib.parse import quote # for URL encoding
 
 
@@ -186,15 +186,32 @@ class BillingPlatform:
 
 
     def query(self, 
-              sql: str) -> dict:
+              sql: str,
+              offset: int = 0,
+              limit: int = 0) -> dict:
         """
         Execute a SQL query against the BillingPlatform API.
 
         :param sql: The SQL query to execute. It should be a valid SQL statement that the BillingPlatform API can process.
+        :param offset: The number of rows to skip before starting to return rows (default is 0).
+        :param limit: The maximum number of rows to return (default is 0, which means no limit).
         :return: The query response data.
         :raises Exception: If the query request fails.
         """
-        _url_encoded_sql: str = quote(sql)
+        # Encode the SQL query for URL
+        _url_encoded_sql: str = ''
+
+        if 'OFFSET' in sql.upper() or 'LIMIT' in sql.upper():
+            _url_encoded_sql = quote(sql)
+        else:
+            if offset:
+                sql = f'{sql} OFFSET {offset} ROWS'
+            
+            if limit:
+                sql = f'{sql} FETCH NEXT {limit} ROWS ONLY'
+            
+            _url_encoded_sql = quote(sql)
+
         _query_url: str = f'{self.rest_base_url}/query?sql={_url_encoded_sql}'
         logging.debug(f'Query URL: {_query_url}')
 
@@ -206,6 +223,37 @@ class BillingPlatform:
             return _query_response
         except requests.RequestException as e:
             raise Exception(f'Failed to execute query: {e}')
+    
+
+    def page_query(self, 
+                   sql: str,
+                   page_size: int = 1000,
+                   offset: int = 0) -> Iterator[dict]:
+        """
+        Execute a paginated SQL query against the BillingPlatform API (as a generator).
+        Yields each page of results as a dict.
+        
+        :param sql: The SQL query to execute. It should be a valid SQL statement that the BillingPlatform API can process.
+        :param page_size: The number of rows to return per page (default is 1000).
+        :param offset: The number of rows to skip before starting to return rows (default is 0).
+        :return: A generator that yields query response data for each page.
+        :raises Exception: If the query request fails.
+        """
+        _offset: int = offset
+
+        if page_size > 10000:
+            logging.warning('BillingPlatform API has a limit of 10,000 records per page. Setting page_size to 10,000.')
+        _limit: int = min(page_size, 10000)
+
+        while True:
+            try:
+                _query_response: dict = self.query(sql, offset=_offset, limit=_limit)
+                yield _query_response
+                _offset += _limit
+            except exceptions.BillingPlatform404Exception:
+                break  # No more records to fetch
+            except requests.RequestException as e:
+                raise Exception(f'Failed to execute paginated query: {e}')
 
 
     def retrieve_by_id(self, 

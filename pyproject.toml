@@ -1,6 +1,6 @@
 [project]
 name='billingplatform'
-version='0.2.0'
+version='0.2.1'
 authors = [
     {name = 'forgineer', email = 'blake.phillips86@gmail.com'},
 ]
