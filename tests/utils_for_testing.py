@@ -1,6 +1,25 @@
 import json
 
 
+"""
+Tests assume a 'credentials.json' file exists withthe following structure:
+
+{
+    "login": {
+        "base_url": "https://sandbox.billingplatform.com/<your_environment>",
+        "username": "your_username",
+        "password": "your_password"
+    },
+    "oauth": {
+        "base_url": "https://sandbox.billingplatform.com/<your_environment>",
+        "client_id": "your_client_id",
+        "client_secret": "your_client_secret"
+    }
+}
+
+If using the mock server, the base_url would likely be set to http://localhost:5000
+"""
+
 def get_credentials(file_path='credentials.json', *keys) -> dict:
     """
     Load credentials from a JSON file. Select specific key/value pairs if provided.

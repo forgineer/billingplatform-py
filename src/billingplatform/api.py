@@ -55,7 +55,7 @@ class BillingPlatform:
         self.rest_base_url: str = f'{self.base_url}/rest/{self.rest_api_version}'
 
 
-         # Authenticate based on provided credentials
+        # Authenticate based on provided credentials
         if all([self.username, self.password]):
             self._login()
         elif all([self.client_id, self.client_secret, self.use_token]):

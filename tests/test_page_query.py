@@ -11,8 +11,8 @@ Tests assume an existing credentials file in the root directory. For more inform
 see the utils_for_testing.py file.
 """
 
-class TestBillingPlatformRetrieve(unittest.TestCase):
-    def test_retrieve_by_id(self):
+class TestBillingPlatformPageQuery(unittest.TestCase):
+    def test_page_query(self):
         logging.basicConfig(level=logging.DEBUG)
 
         session_credentials = get_credentials('credentials.json', 'login')
@@ -21,12 +21,16 @@ class TestBillingPlatformRetrieve(unittest.TestCase):
         self.assertIsInstance(bp, BillingPlatform)
         self.assertIsInstance(bp.session, requests.Session)
 
-        _record_id: int = 1  # Replace with a valid ID for your test, works with mock server data
-        response: dict = bp.retrieve_by_id("ACCOUNT", record_id=_record_id)
+        _page_size: int = 10
+        for page in bp.page_query("SELECT Id, Name, Status FROM ACCOUNT WHERE 1=1", page_size=_page_size):
+            # Assert that that each page is a dictionary
+            self.assertIsInstance(page, dict)
 
-        self.assertIsInstance(response, dict)
-    
-    def test_retrieve_with_query(self):
+            # Assert that the data returned is equal to or less than the page size
+            data = page.get('queryResponse', [])
+            self.assertTrue(len(data) <= _page_size)
+
+    def test_page_query_offset(self):
         logging.basicConfig(level=logging.DEBUG)
 
         session_credentials = get_credentials('credentials.json', 'login')
@@ -35,10 +39,12 @@ class TestBillingPlatformRetrieve(unittest.TestCase):
         self.assertIsInstance(bp, BillingPlatform)
         self.assertIsInstance(bp.session, requests.Session)
 
-        _queryAnsiSql: str = "Id > 0"  # Replace with a valid query for your test, works with mock server data
-        response: dict = bp.retrieve_by_query("ACCOUNT", queryAnsiSql=_queryAnsiSql)
-
-        self.assertIsInstance(response, dict)
+        _page_size: int = 10
+        _offset: int = 1
+        for page in bp.page_query("SELECT Id, Name, Status FROM ACCOUNT WHERE 1=1", page_size=_page_size, offset=_offset):
+            # Assert that that each page is a dictionary
+            self.assertIsInstance(page, dict)
+            # TODO: Add assertions to check the offset functionality
 
 
 if __name__ == '__main__':
