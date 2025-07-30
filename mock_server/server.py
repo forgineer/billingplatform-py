@@ -253,14 +253,14 @@ def undelete(entity: str):
         # Handle DELETE request logic here
         app.logger.debug(f"Received UNDELETE data: {request.json}")
 
-        delete_response = {
+        undelete_response = {
             "deleteResponse": {
-                "message": "Record deleted successfully",
+                "message": "Record restored successfully",
                 "entity": entity
             }
         }
 
-        return delete_response
+        return undelete_response
 
 
 @app.route("/rest/2.0/bulk_api_request", methods=["POST"])
