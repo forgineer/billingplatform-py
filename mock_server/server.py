@@ -35,6 +35,23 @@ data_df: pd.DataFrame = pd.read_csv('mock_server/data.csv')
 data: dict = data_df.to_dict(orient='records')
 
 
+@app.route("/auth/1.0/authenticate", methods=["POST"])
+def oauth_login():
+    """
+    Mock OAuth login endpoint for BillingPlatform API.
+
+    :return: A mock login response containing a fake access token.
+    """
+    oauth_response = {
+        "access_token": "my_access_token",
+        "refresh_token": "my_refresh_token",
+        "token_type": "Bearer",
+        "expires_in": 9999
+    }
+
+    return oauth_response
+
+
 @app.route("/rest/2.0/login", methods=["POST"])
 def login():
     """
@@ -236,14 +253,14 @@ def undelete(entity: str):
         # Handle DELETE request logic here
         app.logger.debug(f"Received UNDELETE data: {request.json}")
 
-        delete_response = {
+        undelete_response = {
             "deleteResponse": {
-                "message": "Record deleted successfully",
+                "message": "Record restored successfully",
                 "entity": entity
             }
         }
 
-        return delete_response
+        return undelete_response
 
 
 @app.route("/rest/2.0/bulk_api_request", methods=["POST"])

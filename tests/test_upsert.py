@@ -6,11 +6,16 @@ from billingplatform import BillingPlatform
 from utils_for_testing import get_credentials
 
 
+"""
+Tests assume an existing credentials file in the root directory. For more information of the expected format, 
+see the utils_for_testing.py file.
+"""
+
 class TestBillingPlatformUpsert(unittest.TestCase):
     def test_basic_upsert(self):
         logging.basicConfig(level=logging.DEBUG)
 
-        session_credentials = get_credentials()
+        session_credentials = get_credentials('credentials.json', 'login')
         bp: BillingPlatform = BillingPlatform(**session_credentials)
 
         self.assertIsInstance(bp, BillingPlatform)
@@ -47,7 +52,7 @@ class TestBillingPlatformUpsert(unittest.TestCase):
     def test_brmobject_upsert(self):
         logging.basicConfig(level=logging.DEBUG)
 
-        session_credentials = get_credentials()
+        session_credentials = get_credentials('credentials.json', 'login')
         bp: BillingPlatform = BillingPlatform(**session_credentials)
 
         self.assertIsInstance(bp, BillingPlatform)
