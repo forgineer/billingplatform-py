@@ -50,6 +50,7 @@ bp = BillingPlatform(
 Once authenticated, you can use the following methods. See the linked documentation for details and examples:
 
 - [Query Records](query.md)
+- [Page Query](page_query.md)
 - [Retrieve by ID](retrieve_by_id.md)
 - [Retrieve by Query](retrieve_by_query.md)
 - [Create Records](create.md)
